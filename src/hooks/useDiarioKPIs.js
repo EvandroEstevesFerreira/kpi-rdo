@@ -1,17 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   getObras,
-  getRelatorios,
+  getRelatoriosNaJanela,
   calcularKPIs,
   limparCache,
 } from '../services/api';
 
-const hoje     = () => new Date().toISOString().slice(0, 10);
+const hoje      = () => new Date().toISOString().slice(0, 10);
 const diasAtras = (n) =>
   new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
 
 /**
  * Hook principal — busca obras e calcula KPIs de todas em paralelo.
+ * Cada obra dispara N chamadas ao endpoint de detalhe (uma por RDO
+ * dentro da janela), com concorrência limitada internamente.
+ *
  * @param {number} dias - Janela de análise em dias corridos (default: 30)
  */
 export function useDiarioKPIs(dias = 30) {
@@ -33,8 +36,8 @@ export function useDiarioKPIs(dias = 30) {
 
       const pares = await Promise.all(
         listaObras.map(async (obra) => {
-          const id   = obra._id || obra.id;
-          const rdos = await getRelatorios(id);
+          const id   = obra._id;
+          const rdos = await getRelatoriosNaJanela(id, inicio, fim);
           return [id, { ...calcularKPIs(rdos, inicio, fim), obra }];
         })
       );
@@ -49,7 +52,6 @@ export function useDiarioKPIs(dias = 30) {
     }
   }, [dias]);
 
-  // Carrega na montagem
   useEffect(() => { carregar(); }, [carregar]);
 
   // Auto-refresh a cada 10 minutos
