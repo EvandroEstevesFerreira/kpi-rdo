@@ -8,10 +8,11 @@ import Logo from './components/Logo';
 import KpiCard from './components/KpiCard';
 import AlertCard from './components/AlertCard';
 import Gauge from './components/Gauge';
+import InfoPopover from './components/InfoPopover';
+import { KPI_INFO } from './data/kpiInfo';
 
 const PERIODOS = [30, 60, 90];
 
-// Gera alertas dinamicamente a partir dos KPIs calculados
 const gerarAlertas = (k) => {
   const out = [];
   if (k.conformidade < 70)
@@ -37,18 +38,50 @@ function ObraDashboard({ kpi }) {
   return (
     <>
       <div className="kpi-grid">
-        <KpiCard label="Taxa de Emissão"        valor={kpi.taxaEmissao} meta={95} />
-        <KpiCard label="Aprovação Supervisor"   valor={kpi.aprovador1}  meta={95} />
-        <KpiCard label="Aprovação Gerente"      valor={kpi.aprovador2}  meta={90} />
-        <KpiCard label="Aprovação Cliente"      valor={kpi.aprovador3}  meta={80} />
-        <KpiCard label="RDOs Pendentes"         valor={kpi.pendentes}   meta={3}  unidade=""    invertido metaLabel="≤ 3" />
-        <KpiCard label="Média de Fotos"         valor={kpi.mediaFotos}  meta={30} unidade=""    metaLabel="≥ 30" />
-        <KpiCard label="RDOs Emitidos"          valor={kpi.totalRdos}                            unidade=""    metaLabel={`de ${kpi.esperados} úteis`} meta={kpi.esperados} />
+        <KpiCard
+          label="Taxa de Emissão"
+          valor={kpi.taxaEmissao}
+          info={KPI_INFO.taxaEmissao}
+        />
+        <KpiCard
+          label="Aprov. Supervisor"
+          valor={kpi.aprovador1}
+          info={KPI_INFO.aprovador1}
+        />
+        <KpiCard
+          label="Aprov. Gerente"
+          valor={kpi.aprovador2}
+          info={KPI_INFO.aprovador2}
+        />
+        <KpiCard
+          label="Aprov. Cliente"
+          valor={kpi.aprovador3}
+          info={KPI_INFO.aprovador3}
+        />
+        <KpiCard
+          label="RDOs Pendentes"
+          valor={kpi.pendentes}
+          info={KPI_INFO.pendentes}
+        />
+        <KpiCard
+          label="Média de Fotos"
+          valor={kpi.mediaFotos}
+          info={KPI_INFO.mediaFotos}
+        />
+        <KpiCard
+          label="RDOs Emitidos"
+          valor={kpi.totalRdos}
+          info={KPI_INFO.totalRdos}
+          metaLabel={`de ${kpi.esperados} dias úteis`}
+        />
       </div>
 
       <div className="dash-row">
         <div className="panel">
-          <h2>Conformidade Geral</h2>
+          <div className="panel-head">
+            <h2>Conformidade Geral</h2>
+            <span className="panel-info-wrap"><InfoButton info={KPI_INFO.conformidade} /></span>
+          </div>
           <Gauge valor={kpi.conformidade} />
         </div>
 
@@ -94,7 +127,62 @@ function ObraDashboard({ kpi }) {
           )}
         </div>
       </div>
+
+      <SobreKPIs />
     </>
+  );
+}
+
+function InfoButton({ info }) {
+  return <InfoPopover info={info} />;
+}
+
+function SobreKPIs() {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <div className="panel sobre-kpis">
+      <button
+        type="button"
+        className="sobre-toggle"
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+      >
+        <span>📊 Sobre os KPIs — definições, fórmulas e tolerâncias</span>
+        <span className="chevron">{aberto ? '▲' : '▼'}</span>
+      </button>
+
+      {aberto && (
+        <div className="sobre-grid">
+          {Object.entries(KPI_INFO).map(([key, info]) => (
+            <div key={key} className="sobre-item">
+              <h4>{info.titulo}</h4>
+              <p>{info.descricao}</p>
+              {info.formula && (
+                <p><strong>Cálculo:</strong> <code>{info.formula}</code></p>
+              )}
+              {info.meta != null && (
+                <p>
+                  <strong>Meta:</strong> {info.invertido ? '≤ ' : '≥ '}
+                  {info.meta}{info.unidade}
+                </p>
+              )}
+              {info.bandas && (
+                <ul className="sobre-bandas">
+                  {info.bandas.map((b, i) => (
+                    <li key={i} className={`band-${b.status}`}>
+                      <span className="band-dot" /> {b.label}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {info.impacto && (
+                <p className="sobre-impacto">{info.impacto}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -103,7 +191,6 @@ export default function App() {
   const [obraSel, setObraSel] = useState(null);
   const { obras, kpis, loading, error, lastSync, recarregar } = useDiarioKPIs(dias);
 
-  // Seleciona a primeira obra automaticamente quando carrega
   const obraAtual = obraSel || obras[0]?._id;
   const kpiAtual  = obraAtual ? kpis[obraAtual] : null;
 
