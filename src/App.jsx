@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, BarChart, Bar,
@@ -9,6 +9,7 @@ import KpiCard from './components/KpiCard';
 import AlertCard from './components/AlertCard';
 import Gauge from './components/Gauge';
 import InfoPopover from './components/InfoPopover';
+import Treinamento from './views/Treinamento';
 import { KPI_INFO } from './data/kpiInfo';
 
 const PERIODOS = [30, 60, 90];
@@ -38,49 +39,21 @@ function ObraDashboard({ kpi }) {
   return (
     <>
       <div className="kpi-grid">
-        <KpiCard
-          label="Taxa de Emissão"
-          valor={kpi.taxaEmissao}
-          info={KPI_INFO.taxaEmissao}
-        />
-        <KpiCard
-          label="Aprov. Supervisor"
-          valor={kpi.aprovador1}
-          info={KPI_INFO.aprovador1}
-        />
-        <KpiCard
-          label="Aprov. Gerente"
-          valor={kpi.aprovador2}
-          info={KPI_INFO.aprovador2}
-        />
-        <KpiCard
-          label="Aprov. Cliente"
-          valor={kpi.aprovador3}
-          info={KPI_INFO.aprovador3}
-        />
-        <KpiCard
-          label="RDOs Pendentes"
-          valor={kpi.pendentes}
-          info={KPI_INFO.pendentes}
-        />
-        <KpiCard
-          label="Média de Fotos"
-          valor={kpi.mediaFotos}
-          info={KPI_INFO.mediaFotos}
-        />
-        <KpiCard
-          label="RDOs Emitidos"
-          valor={kpi.totalRdos}
-          info={KPI_INFO.totalRdos}
-          metaLabel={`de ${kpi.esperados} dias úteis`}
-        />
+        <KpiCard label="Taxa de Emissão"  valor={kpi.taxaEmissao} info={KPI_INFO.taxaEmissao} />
+        <KpiCard label="Aprov. Supervisor" valor={kpi.aprovador1}  info={KPI_INFO.aprovador1} />
+        <KpiCard label="Aprov. Gerente"    valor={kpi.aprovador2}  info={KPI_INFO.aprovador2} />
+        <KpiCard label="Aprov. Cliente"    valor={kpi.aprovador3}  info={KPI_INFO.aprovador3} />
+        <KpiCard label="RDOs Pendentes"    valor={kpi.pendentes}   info={KPI_INFO.pendentes} />
+        <KpiCard label="Média de Fotos"    valor={kpi.mediaFotos}  info={KPI_INFO.mediaFotos} />
+        <KpiCard label="RDOs Emitidos"     valor={kpi.totalRdos}   info={KPI_INFO.totalRdos}
+                 metaLabel={`de ${kpi.esperados} dias úteis`} />
       </div>
 
       <div className="dash-row">
         <div className="panel">
           <div className="panel-head">
             <h2>Conformidade Geral</h2>
-            <span className="panel-info-wrap"><InfoButton info={KPI_INFO.conformidade} /></span>
+            <span className="panel-info-wrap"><InfoPopover info={KPI_INFO.conformidade} /></span>
           </div>
           <Gauge valor={kpi.conformidade} />
         </div>
@@ -100,7 +73,7 @@ function ObraDashboard({ kpi }) {
         </div>
       </div>
 
-      <div className="dash-row" style={{ gridTemplateColumns: '1fr 1fr' }}>
+      <div className="dash-row dash-row-2col">
         <div className="panel">
           <h2>Alertas</h2>
           <div className="alerts">
@@ -131,10 +104,6 @@ function ObraDashboard({ kpi }) {
       <SobreKPIs />
     </>
   );
-}
-
-function InfoButton({ info }) {
-  return <InfoPopover info={info} />;
 }
 
 function SobreKPIs() {
@@ -187,26 +156,47 @@ function SobreKPIs() {
 }
 
 export default function App() {
-  const [dias, setDias] = useState(30);
-  const [obraSel, setObraSel] = useState(null);
+  const [dias, setDias]           = useState(30);
+  const [obraSel, setObraSel]     = useState(null);
+  const [view, setView]           = useState('dashboard'); // 'dashboard' | 'treinamento'
+  const [menuOpen, setMenuOpen]   = useState(false);
   const { obras, kpis, loading, error, lastSync, recarregar } = useDiarioKPIs(dias);
 
   const obraAtual = obraSel || obras[0]?._id;
   const kpiAtual  = obraAtual ? kpis[obraAtual] : null;
 
+  // Fecha o menu mobile quando trocar de view/obra
+  useEffect(() => { setMenuOpen(false); }, [view, obraSel]);
+
+  const selecionarObra = (id) => {
+    setView('dashboard');
+    setObraSel(id);
+  };
+
   return (
-    <div className="app">
+    <div className={`app ${menuOpen ? 'menu-open' : ''}`}>
+      {menuOpen && (
+        <div className="sidebar-backdrop" onClick={() => setMenuOpen(false)} />
+      )}
+
       <aside className="sidebar">
         <div className="sidebar-header">
           <Logo variant="dark" height={36} />
+          <button
+            type="button"
+            className="sidebar-close"
+            aria-label="Fechar menu"
+            onClick={() => setMenuOpen(false)}
+          >×</button>
         </div>
 
         <nav className="sidebar-nav">
+          <div className="sidebar-section-label">Obras</div>
           {obras.map((o) => (
             <button
               key={o._id}
-              className={obraAtual === o._id ? 'active' : ''}
-              onClick={() => setObraSel(o._id)}
+              className={view === 'dashboard' && obraAtual === o._id ? 'active' : ''}
+              onClick={() => selecionarObra(o._id)}
             >
               <span className="obra-nome">{o.nome}</span>
               <span className="obra-meta">
@@ -221,6 +211,15 @@ export default function App() {
               Nenhuma obra ativa encontrada.
             </p>
           )}
+
+          <div className="sidebar-divider" />
+          <div className="sidebar-section-label">Recursos</div>
+          <button
+            className={`nav-item-flat ${view === 'treinamento' ? 'active' : ''}`}
+            onClick={() => setView('treinamento')}
+          >
+            📘 Treinamento e Usabilidade
+          </button>
         </nav>
 
         <div className="sidebar-foot">
@@ -232,44 +231,66 @@ export default function App() {
 
       <main className="main">
         <div className="topbar">
-          <div>
-            <h1>{kpiAtual?.obra?.nome || 'Dashboard KPI RDO'}</h1>
+          <button
+            type="button"
+            className="menu-btn"
+            aria-label="Abrir menu"
+            onClick={() => setMenuOpen(true)}
+          >☰</button>
+
+          <div className="topbar-title">
+            <h1>
+              {view === 'treinamento'
+                ? 'Treinamento e Usabilidade'
+                : (kpiAtual?.obra?.nome || 'Dashboard KPI RDO')}
+            </h1>
             <div className="subtitle">
-              Sistenge Construções e Comércio Ltda. · Últimos {dias} dias
+              {view === 'treinamento'
+                ? 'Manual do dashboard KPI RDO'
+                : `Sistenge Construções e Comércio Ltda. · Últimos ${dias} dias`}
             </div>
           </div>
-          <div className="topbar-actions">
-            {PERIODOS.map((d) => (
-              <button
-                key={d}
-                className={`btn ${d === dias ? '' : 'btn-secondary'}`}
-                onClick={() => setDias(d)}
-              >
-                {d}d
+
+          {view === 'dashboard' && (
+            <div className="topbar-actions">
+              {PERIODOS.map((d) => (
+                <button
+                  key={d}
+                  className={`btn ${d === dias ? '' : 'btn-secondary'}`}
+                  onClick={() => setDias(d)}
+                >
+                  {d}d
+                </button>
+              ))}
+              <button className="btn btn-secondary btn-refresh" onClick={recarregar} disabled={loading}>
+                {loading ? '…' : '↻'}
               </button>
-            ))}
-            <button className="btn btn-secondary" onClick={recarregar} disabled={loading}>
-              {loading ? 'Atualizando…' : '↻ Atualizar'}
-            </button>
-          </div>
+            </div>
+          )}
         </div>
 
-        {error && (
-          <div className="state-msg error">
-            <h2>Erro ao carregar dados</h2>
-            <pre>{error}</pre>
-            <p>Verifique se o <code>vercel dev</code> está rodando e o <code>.env.local</code> está correto.</p>
-          </div>
-        )}
+        {view === 'treinamento' ? (
+          <Treinamento />
+        ) : (
+          <>
+            {error && (
+              <div className="state-msg error">
+                <h2>Erro ao carregar dados</h2>
+                <pre>{error}</pre>
+                <p>Verifique se o <code>vercel dev</code> está rodando e o <code>.env.local</code> está correto.</p>
+              </div>
+            )}
 
-        {loading && !kpiAtual && (
-          <div className="state-msg">
-            <h2>Carregando dados da API…</h2>
-            <p>Buscando obras e detalhes dos RDOs dos últimos {dias} dias.</p>
-          </div>
-        )}
+            {loading && !kpiAtual && (
+              <div className="state-msg">
+                <h2>Carregando dados da API…</h2>
+                <p>Buscando obras e detalhes dos RDOs dos últimos {dias} dias.</p>
+              </div>
+            )}
 
-        {kpiAtual && <ObraDashboard kpi={kpiAtual} />}
+            {kpiAtual && <ObraDashboard kpi={kpiAtual} />}
+          </>
+        )}
       </main>
     </div>
   );
