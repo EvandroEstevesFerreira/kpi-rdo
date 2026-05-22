@@ -1,6 +1,8 @@
 // ─── Configuração ─────────────────────────────────────────────────────────────
-const BASE      = '/api/diario';
-const USE_MOCK  = import.meta.env.VITE_USE_MOCK === 'true';
+// Todas as chamadas passam pelo proxy serverless em /api/diario, que
+// injeta os headers `Token`, `App-Iss` e o prefixo /empresas/{empresaId}.
+const BASE     = '/api/diario';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 // Cache em memória — evita chamadas repetidas em 5 min
 const _cache = new Map();
@@ -15,10 +17,13 @@ const cached = async (key, fn, ttl = 300_000) => {
 
 // ─── Requisição base ─────────────────────────────────────────────────────────
 const get = async (path, params = {}) => {
-  const qs  = new URLSearchParams(
-    Object.entries(params).filter(([, v]) => v != null)
-  ).toString();
-  const url = `${BASE}${path}${qs ? '?' + qs : ''}`;
+  // Adiciona cache-buster `t` para imitar o comportamento do app-web,
+  // que evita cache agressivo do CDN intermediário.
+  const qs = new URLSearchParams({
+    ...Object.fromEntries(Object.entries(params).filter(([, v]) => v != null)),
+    t: Date.now(),
+  }).toString();
+  const url = `${BASE}${path}?${qs}`;
   const res = await fetch(url);
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
@@ -29,28 +34,36 @@ const get = async (path, params = {}) => {
 
 // ─── Endpoints ───────────────────────────────────────────────────────────────
 
-/** Lista todas as obras ativas */
+/**
+ * Lista todas as obras da empresa.
+ * Resposta: { totalObras, statusObra:[], obras:[], gruposDeObra:[] }
+ * Retorna apenas o array de obras já filtrado por "Em Andamento" (status.id === 3).
+ */
 export const getObras = () =>
-  cached('obras', () => get('/obras', { status: 'active' }), 600_000);
+  cached('obras', async () => {
+    const data = await get('/obras', { grupoObra: true });
+    const todas = data.obras || [];
+    return todas.filter((o) => o?.status?.id === 3);
+  }, 600_000);
 
-/** Detalhes de uma obra */
+/** Detalhes de uma obra específica */
 export const getObraDetalhes = (id) =>
   cached(`obra-${id}`, () => get(`/obras/${id}`), 600_000);
 
-/** RDOs de uma obra — limit alto para cobrir 30+ dias */
-export const getRelatorios = (projectId, limit = 200) =>
+/** RDOs de uma obra. Parâmetros em PT: `limite`, `ordem` */
+export const getRelatorios = (obraId, limite = 200) =>
   cached(
-    `rdos-${projectId}`,
-    () => get(`/obras/${projectId}/relatorios`, { limit, order: 'desc' }),
-    300_000
+    `rdos-${obraId}`,
+    () => get(`/obras/${obraId}/relatorios`, { limite, ordem: 'desc' }),
+    300_000,
   );
 
-/** Lista de tarefas — avanço físico */
-export const getTarefas = (projectId) =>
+/** RDOs aguardando aprovação — endpoint dedicado da API */
+export const getPendentesAprovacao = (obraId) =>
   cached(
-    `tarefas-${projectId}`,
-    () => get(`/obras/${projectId}/tarefas`),
-    300_000
+    `pendentes-${obraId}`,
+    () => get(`/obras/${obraId}/relatorios-aguardando-aprovacao`),
+    300_000,
   );
 
 /** Limpa o cache (útil para forçar refresh) */
@@ -72,12 +85,17 @@ const diasUteis = (inicio, fim) => {
 const diffDias = (a, b) =>
   Math.abs((new Date(b) - new Date(a)) / 86_400_000);
 
-// ─── Extratores defensivos (lida com variações da API) ───────────────────────
-const dataRdo      = (r) => r.data || r.dataRelatorio || r.createdAt;
-const idProjeto    = (o) => o._id  || o.id;
-const qtdFotos     = (r) => r.fotos?.total ?? r.qtdFotos ?? r.totalFotos ?? 0;
-const aprovacoes   = (r) => r.aprovacoes || r.assinaturas || [];
-const criadoEm     = (r) => r.criadoEm   || r.createdAt   || r.data;
+// ─── Extratores defensivos ───────────────────────────────────────────────────
+// O endpoint de obras retorna um envelope; o de relatorios também pode
+// retornar tanto array puro quanto { relatorios: [...] }. Esses extratores
+// blindam contra essas variações.
+const unwrapRelatorios = (resp) =>
+  Array.isArray(resp) ? resp : (resp?.relatorios || resp?.data || []);
+
+const dataRdo        = (r) => r.data || r.dataRelatorio || r.createdAt;
+const qtdFotos       = (r) => r.fotos?.total ?? r.totalFotos ?? r.qtdFotos ?? 0;
+const aprovacoes     = (r) => r.aprovacoes || r.assinaturas || [];
+const criadoEm       = (r) => r.criadoEm   || r.createdAt   || r.data;
 const tipoOcorrencia = (oc) => oc.tipo || oc.tipoOcorrencia || oc.categoria || 'Outros';
 
 const eAprovado  = (ap) => ['aprovado', 'approved'].includes(ap.status);
@@ -87,13 +105,14 @@ const dataAp     = (ap) => ap.dataAprovacao || ap.dataAssinatura || ap.updatedAt
 // ─── Cálculo de KPIs ─────────────────────────────────────────────────────────
 
 /**
- * Recebe array de RDOs brutos da API e retorna todos os KPIs calculados.
- * @param {Array}  relatorios  - RDOs retornados pelo endpoint /relatorios
- * @param {string} inicio      - Data inicial "YYYY-MM-DD"
- * @param {string} fim         - Data final   "YYYY-MM-DD"
+ * @param {Array|Object} resp   - Resposta crua do endpoint /relatorios
+ * @param {string}       inicio - "YYYY-MM-DD"
+ * @param {string}       fim    - "YYYY-MM-DD"
  */
-export const calcularKPIs = (relatorios, inicio, fim) => {
-  const rdos = (relatorios || []).filter((r) => {
+export const calcularKPIs = (resp, inicio, fim) => {
+  const todos = unwrapRelatorios(resp);
+
+  const rdos = todos.filter((r) => {
     const d = new Date(dataRdo(r));
     return d >= new Date(inicio) && d <= new Date(fim);
   });
@@ -101,12 +120,10 @@ export const calcularKPIs = (relatorios, inicio, fim) => {
   const total    = rdos.length;
   const esperado = diasUteis(inicio, fim);
 
-  // Taxa de emissão
   const taxaEmissao = esperado
     ? Math.min(100, Math.round((total / esperado) * 100))
     : 0;
 
-  // % RDOs aprovados dentro do prazo pelo aprovador de índice `idx`
   const prazoOk = (idx, limiteDias) => {
     if (!total) return 0;
     const ok = rdos.filter((r) => {
@@ -121,7 +138,6 @@ export const calcularKPIs = (relatorios, inicio, fim) => {
   const aprovador2 = prazoOk(1, 2);
   const aprovador3 = prazoOk(2, 7);
 
-  // Tempo médio de aprovação por aprovador (em dias)
   const tempoMedio = (idx) => {
     const tempos = rdos
       .map((r) => {
@@ -134,22 +150,19 @@ export const calcularKPIs = (relatorios, inicio, fim) => {
     return +(tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(1);
   };
 
-  // RDOs com pelo menos 1 aprovação pendente
   const pendentes = rdos.filter((r) =>
     aprovacoes(r).some(ePendente)
   ).length;
 
-  // Média de fotos por RDO
   const mediaFotos = total
     ? Math.round(rdos.reduce((s, r) => s + qtdFotos(r), 0) / total)
     : 0;
 
-  // Ocorrências agrupadas por tipo
   const ocorrencias = Object.entries(
     rdos
       .flatMap((r) => r.ocorrencias || [])
       .reduce((acc, oc) => {
-        const tipo   = tipoOcorrencia(oc);
+        const tipo = tipoOcorrencia(oc);
         acc[tipo] = (acc[tipo] || 0) + 1;
         return acc;
       }, {})
@@ -157,16 +170,12 @@ export const calcularKPIs = (relatorios, inicio, fim) => {
     .map(([tipo, qtd]) => ({ tipo, qtd }))
     .sort((a, b) => b.qtd - a.qtd);
 
-  // Conformidade geral ponderada
   const conformidade = Math.round(
     taxaEmissao * 0.40 +
     aprovador1  * 0.20 +
     aprovador2  * 0.20 +
     aprovador3  * 0.20
   );
-
-  // Evolução semanal (últimas 5 semanas)
-  const evolucaoSemanal = calcularEvolucaoSemanal(rdos, fim);
 
   return {
     taxaEmissao,
@@ -177,24 +186,23 @@ export const calcularKPIs = (relatorios, inicio, fim) => {
     mediaFotos,
     ocorrencias,
     conformidade,
-    totalRdos:  total,
-    esperados:  esperado,
+    totalRdos: total,
+    esperados: esperado,
     tempoMedio: {
       ap1: tempoMedio(0),
       ap2: tempoMedio(1),
       ap3: tempoMedio(2),
     },
-    evolucaoSemanal,
+    evolucaoSemanal: calcularEvolucaoSemanal(rdos, fim),
   };
 };
 
-// Agrupa RDOs por semana e calcula taxa de emissão em cada uma
 const calcularEvolucaoSemanal = (rdos, fimStr, numSemanas = 5) => {
   const semanas = [];
   const fim = new Date(fimStr);
 
   for (let i = numSemanas - 1; i >= 0; i--) {
-    const fimSem   = new Date(fim);
+    const fimSem = new Date(fim);
     fimSem.setDate(fim.getDate() - i * 7);
     const inicioSem = new Date(fimSem);
     inicioSem.setDate(fimSem.getDate() - 6);
@@ -210,8 +218,8 @@ const calcularEvolucaoSemanal = (rdos, fimStr, numSemanas = 5) => {
     );
 
     semanas.push({
-      sem:      `S${numSemanas - i}`,
-      emitidos: rdosSem.length,
+      sem:       `S${numSemanas - i}`,
+      emitidos:  rdosSem.length,
       esperados: esperadoSem,
       taxa:      esperadoSem
         ? Math.min(100, Math.round((rdosSem.length / esperadoSem) * 100))
