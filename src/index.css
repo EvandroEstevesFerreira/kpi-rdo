@@ -335,9 +335,8 @@ a { color: inherit; }
 
 .info-panel {
   position: absolute;
-  top: 24px;
-  right: 0;
   width: 300px;
+  max-width: calc(100vw - 24px);
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 8px;

@@ -1,18 +1,23 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 
 /**
- * Botão "i" circular que abre um popover com detalhes do KPI.
- * Usa toggle por clique (não hover) — funciona em mobile e
- * evita fechar acidentalmente ao mover o mouse.
+ * Botão "i" que abre um popover com detalhes do KPI.
+ * O popover é renderizado dentro do mesmo subtree, mas com posicionamento
+ * absoluto ajustado dinamicamente para nunca sair da viewport
+ * (flipa horizontalmente se cortar à direita; ajusta verticalmente
+ *  se passar do final da tela).
  */
 export default function InfoPopover({ info }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [pos, setPos]   = useState({ top: 24, left: 0, right: 'auto' });
+  const wrapRef  = useRef(null);
+  const panelRef = useRef(null);
 
+  // Fecha por clique fora / Esc
   useEffect(() => {
     if (!open) return;
     const onClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
     };
     const onEsc = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onClick);
@@ -23,10 +28,38 @@ export default function InfoPopover({ info }) {
     };
   }, [open]);
 
+  // Reposiciona quando abre — checa se cabe à direita do botão; se não, flipa
+  useLayoutEffect(() => {
+    if (!open || !panelRef.current || !wrapRef.current) return;
+    const wrap   = wrapRef.current.getBoundingClientRect();
+    const panel  = panelRef.current.getBoundingClientRect();
+    const vw     = window.innerWidth;
+    const MARGEM = 12;
+
+    // Por padrão, extende para a direita do botão
+    const espacoDireita  = vw - wrap.left - MARGEM;
+    const espacoEsquerda = wrap.right - MARGEM;
+
+    let next;
+    if (panel.width <= espacoDireita) {
+      next = { top: 24, left: 0, right: 'auto' };
+    } else if (panel.width <= espacoEsquerda) {
+      next = { top: 24, right: 0, left: 'auto' };
+    } else {
+      // Não cabe nem de um lado nem de outro — centraliza usando viewport
+      const left = Math.max(
+        MARGEM - wrap.left,
+        Math.min(0, vw - wrap.left - panel.width - MARGEM)
+      );
+      next = { top: 24, left, right: 'auto' };
+    }
+    setPos(next);
+  }, [open]);
+
   if (!info) return null;
 
   return (
-    <span className="info-pop" ref={ref}>
+    <span className="info-pop" ref={wrapRef}>
       <button
         type="button"
         className="info-btn"
@@ -35,7 +68,12 @@ export default function InfoPopover({ info }) {
       >i</button>
 
       {open && (
-        <div className="info-panel" role="dialog">
+        <div
+          ref={panelRef}
+          className="info-panel"
+          role="dialog"
+          style={{ top: pos.top, left: pos.left, right: pos.right }}
+        >
           <h4>{info.titulo}</h4>
           <p>{info.descricao}</p>
 
