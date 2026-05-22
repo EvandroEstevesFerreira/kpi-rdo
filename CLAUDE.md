@@ -180,28 +180,60 @@ Configurar a variável `DIARIO_API_KEY` no painel da Vercel antes do deploy:
 
 ## Campos da API — mapeamento confirmado
 
-Validado por inspeção no DevTools em 2026-05-22 contra a Sistenge:
+Validado por inspeção do payload real em 2026-05-22:
+
+### Obra (item de `data.obras` do endpoint /obras)
 
 ```js
-// Obra (do array data.obras)
-obra._id                          // ID único (24 chars hex)
-obra.nome                         // "605 | Fator Towers | Unimed Maceió/AL"
-obra.status.id                    // 1=Não Iniciada, 2=Paralisada, 3=Em Andamento, 4=Concluída
-obra.totalRelatorios              // total histórico de RDOs
-obra.totalFotos                   // total histórico de fotos
-obra.fotoUrl                      // capa
-obra.grupo._id                    // ID do grupo de obras
-
-// RDO (estrutura presumida — confirmar com curl em /obras/{id}/relatorios)
-r.data || r.dataRelatorio         // data do RDO
-r.fotos?.total || r.totalFotos    // fotos do dia
-r.aprovacoes || r.assinaturas     // array de aprovações
-ap.status === 'aprovado'          // aprovado
-ap.status === 'pendente'          // aguardando
-r.criadoEm || r.data              // data de criação
+obra._id            // "654a8b4a43bf3a2a4d043e82"
+obra.nome           // "605 | Fator Towers | Unimed Maceió/AL"
+obra.status.id      // 1=Não Iniciada | 2=Paralisada | 3=Em Andamento | 4=Concluída
+obra.totalRelatorios
+obra.totalFotos
+obra.fotoUrl
+obra.grupo._id
 ```
 
-Se algum campo divergir, atualizar `src/services/api.js` (extratores no topo).
+### RDO — listing leve (/obras/{id}/relatorios)
+
+```js
+r._id
+r.data              // "20/05/2026" (DD/MM/YYYY — usar parseDataBR())
+r.numero            // 553
+r.totalFotos        // 60
+r.status.id         // 1=Preenchendo, etc.
+r.modeloDeRelatorio.assinaturasTipo  // "eletronica"
+r.linkPdf
+```
+
+O listing NÃO traz aprovações, ocorrências, mão-de-obra, atividades ou fotos.
+Para esses campos é preciso buscar o detalhe individual.
+
+### RDO — detalhe (/obras/{id}/relatorios/{rdoId})
+
+```js
+// Datas (todas em formato BR — usar parseDataBR())
+r.data                         // "20/05/2026"
+r.log.criadoPor.dataHora       // "21/05/2026 14:05" — criação real
+
+// Fotos (total real)
+r.galeriaDeFotos.length
+
+// Aprovações eletrônicas — array ordenado conforme fluxo
+r.assinaturasEletronicaUrl[i] = {
+  usuarioNome,                 // "Janilma Barbosa"
+  usuarioCargo,                // "Encarregado de Obras Técnico"
+  usuarioEmail,
+  aprovado,                    // BOOLEAN — não é string status!
+  proximoAprovar,              // BOOLEAN — quem está na fila agora
+  dataHora,                    // "DD/MM/YYYY HH:mm" ou null
+}
+
+// Ocorrências
+r.ocorrencias = []             // estrutura a confirmar
+```
+
+Se algum campo divergir, atualizar os extratores em `src/services/api.js`.
 
 ## Tarefas pendentes na primeira sessão
 
