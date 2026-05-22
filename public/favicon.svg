@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="10" fill="#cf2927"/>
-  <text x="32" y="44" text-anchor="middle" font-family="Barlow Condensed, Arial, sans-serif"
-        font-weight="700" font-size="34" fill="#fff">S</text>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 60 530 270">
+  <path fill="#cf2927" d="M95.63,310.36h276.21c23.7,0,47.95-19.22,54.16-42.9,6.21-23.69-7.97-42.9-31.68-42.9H118.11l-22.48,85.81Z"/>
+  <path fill="#cf2927" d="M555.81,81.83h-276.21c-23.7,0-47.95,19.22-54.16,42.9-6.21,23.7,7.97,42.91,31.68,42.91h276.21l22.48-85.82Z"/>
 </svg>
