@@ -10,10 +10,19 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Extrai o caminho após /api/diario (ex: /obras, /obras/123/relatorios)
-  const rawPath = req.url || '';
-  const apiPath = rawPath.replace(/^\/api\/diario/, '');
-  const target  = `https://api.diariodeobra.app/v1${apiPath}`;
+  // O rewrite em vercel.json (/api/diario/:path* -> /api/diario/proxy)
+  // injeta o segmento capturado como req.query.path. Precisamos separar
+  // esse capturado da query string original que o cliente enviou.
+  const { path: capturedPath, ...clientQuery } = req.query || {};
+
+  // capturedPath pode vir como string ("obras") ou array (["obras","123","relatorios"])
+  const pathSegment = Array.isArray(capturedPath)
+    ? capturedPath.join('/')
+    : (capturedPath || '');
+
+  const apiPath = pathSegment ? `/${pathSegment}` : '';
+  const qs      = new URLSearchParams(clientQuery).toString();
+  const target  = `https://api.diariodeobra.app/v1${apiPath}${qs ? '?' + qs : ''}`;
 
   console.log(`[proxy] -> ${req.method} ${target}`);
 
@@ -34,7 +43,7 @@ export default async function handler(req, res) {
       res.status(upstream.status).json({
         error:  `API retornou ${upstream.status}`,
         detail: body,
-        path:   apiPath,
+        target,
       });
       return;
     }
