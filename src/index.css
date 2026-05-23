@@ -732,33 +732,13 @@ a { color: inherit; }
 
 .treinamento-wrap { max-width: 1280px; }
 
-/* Tabs entre manuais */
-.manual-tabs {
-  display: flex;
-  gap: 2px;
-  border-bottom: 2px solid var(--border);
-  margin-bottom: 16px;
-  overflow-x: auto;
-}
-.manual-tab {
-  background: transparent;
-  border: 0;
-  padding: 12px 18px;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--muted);
-  cursor: pointer;
-  border-bottom: 3px solid transparent;
-  white-space: nowrap;
-  margin-bottom: -2px;
-}
-.manual-tab:hover { color: var(--ink); }
-.manual-tab.active {
-  color: var(--red);
-  border-bottom-color: var(--red);
+.manual-iframe {
+  width: 100%;
+  height: calc(100vh - 180px);
+  min-height: 600px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
 }
 
 .manual-meta {
