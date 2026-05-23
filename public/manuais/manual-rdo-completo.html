@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Preenchimento do RDO — Sistenge</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap');
+
+:root {
+  --red:#BE3A31; --red-dk:#9a2c25; --red-lt:#fdf2f2;
+  --cover-bg:#2b2b2b;
+  --sidebar-bg:#3a3a3a;
+  --blk:#222222; --drk:#3a3a3a; --gray:#5c5c6e; --glt:#e4e4ec; --ultra:#f4f4f8; --wht:#fff;
+  --fd:'Barlow Condensed',sans-serif; --fb:'Barlow',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--fb);background:#f0f0f5;color:var(--blk);font-size:14.5px;line-height:1.7}
+
+/* CAPA */
+.cover{background:var(--cover-bg);color:var(--wht);min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;padding:64px;position:relative;overflow:hidden}
+.cover::before{content:'';position:absolute;top:-100px;right:-100px;width:480px;height:480px;background:var(--red);opacity:.08;border-radius:50%}
+.cover::after{content:'';position:absolute;bottom:-80px;left:-60px;width:320px;height:320px;background:var(--red);opacity:.05;border-radius:50%}
+.c-logo{display:flex;align-items:center;gap:0;z-index:1}
+.c-logo svg{height:48px;width:auto}
+.c-body{z-index:1;max-width:680px}
+.c-tag{display:inline-block;background:var(--red);color:var(--wht);font-family:var(--fd);font-weight:700;font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding:5px 14px;margin-bottom:28px}
+.c-title{font-family:var(--fd);font-size:clamp(44px,6vw,76px);font-weight:900;line-height:.95;letter-spacing:-.01em;text-transform:uppercase;margin-bottom:24px}
+.c-title span{color:var(--red)}
+.c-sub{font-size:16px;font-weight:300;color:#c0bfcc;max-width:540px;line-height:1.65}
+.c-foot{display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid rgba(255,255,255,.12);padding-top:28px;z-index:1}
+.c-meta{font-size:12px;color:#aaa}
+.c-meta strong{display:block;color:#d0cfe0;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+.c-ver{font-family:var(--fd);font-size:52px;font-weight:900;color:rgba(255,255,255,.12);letter-spacing:-.03em;line-height:1}
+
+/* LAYOUT */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:272px;flex-shrink:0;background:var(--sidebar-bg);color:var(--wht);position:sticky;top:0;height:100vh;overflow-y:auto;padding:36px 0}
+.sb-logo{padding:0 26px 28px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:0}
+.sb-logo svg{height:32px;width:auto}
+.sb-nav{padding:20px 0}
+.nav-section{padding:8px 26px;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 26px;font-size:12.5px;font-weight:500;color:rgba(255,255,255,.55);text-decoration:none;border-left:3px solid transparent;transition:all .18s}
+.nav-item:hover{color:var(--wht);border-left-color:var(--red);background:rgba(255,255,255,.05)}
+.nav-item.active{color:var(--wht);border-left-color:var(--red);background:rgba(190,58,49,.18)}
+.nav-num{font-family:var(--fd);font-size:11px;font-weight:700;color:var(--red);width:18px;flex-shrink:0}
+
+/* MAIN */
+.main{flex:1;max-width:calc(100% - 272px)}
+.section{padding:72px 68px;border-bottom:1px solid var(--glt);background:var(--wht)}
+.section:nth-child(even){background:var(--ultra)}
+.sec-num{font-family:var(--fd);font-size:12px;font-weight:700;letter-spacing:.18em;color:var(--red);text-transform:uppercase;margin-bottom:6px}
+.sec-title{font-family:var(--fd);font-size:clamp(26px,3vw,40px);font-weight:900;line-height:1;text-transform:uppercase;letter-spacing:-.01em;color:var(--blk);margin-bottom:28px}
+.sec-lead{font-size:15px;color:var(--gray);max-width:660px;margin-bottom:44px;line-height:1.75}
+
+/* ALERTAS */
+.alert{border-left:4px solid var(--red);background:var(--red-lt);padding:18px 22px;margin:28px 0;border-radius:0 4px 4px 0}
+.alert-title{font-family:var(--fd);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+.alert p{font-size:13.5px;color:#444;line-height:1.65}
+.alert.info{border-left-color:#2563eb;background:#eff6ff}.alert.info .alert-title{color:#2563eb}
+.alert.ok{border-left-color:#16a34a;background:#f0fdf4}.alert.ok .alert-title{color:#16a34a}
+.alert.warn{border-left-color:#d97706;background:#fffbeb}.alert.warn .alert-title{color:#d97706}
+
+/* GRID DE CARDS */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;margin-top:28px}
+.card{background:var(--wht);border:1px solid var(--glt);border-radius:8px;padding:22px;transition:box-shadow .2s}
+.section:nth-child(even) .card{background:var(--wht)}
+.card:hover{box-shadow:0 4px 18px rgba(0,0,0,.07)}
+.card-icon{width:38px;height:38px;background:var(--red);border-radius:7px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.card-icon svg{width:18px;height:18px;stroke:white;fill:none}
+.card-name{font-family:var(--fd);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.card-desc{font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:10px}
+.card-ex{background:var(--ultra);border-radius:4px;padding:9px 13px;font-size:12px;color:#444;font-style:italic;border-left:3px solid var(--red);line-height:1.5}
+.badge{display:inline-block;padding:3px 9px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:9px}
+.b-red{background:#fee2e2;color:var(--red)}
+.b-ylw{background:#fef9c3;color:#92400e}
+.b-blu{background:#dbeafe;color:#1d4ed8}
+
+/* TABELA */
+.tbl-wrap{overflow-x:auto;margin:24px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead tr{background:#2e2e3a;color:var(--wht)}
+thead th{padding:12px 16px;text-align:left;font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+tbody tr:nth-child(even){background:var(--ultra)}
+tbody tr:hover{background:#fff0ef}
+tbody td{padding:11px 16px;color:#333;vertical-align:top;border-bottom:1px solid var(--glt)}
+.tb{display:inline-block;padding:2px 9px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.tb-r{background:#fee2e2;color:var(--red)}.tb-g{background:#dcfce7;color:#15803d}.tb-b{background:#dbeafe;color:#1d4ed8}.tb-y{background:#fef9c3;color:#92400e}
+
+/* FLUXO */
+.flow{display:flex;flex-direction:column;gap:0;margin-top:28px;position:relative}
+.flow::before{content:'';position:absolute;left:26px;top:52px;bottom:26px;width:2px;background:linear-gradient(to bottom,var(--red),rgba(190,58,49,.15))}
+.flow-step{display:flex;gap:26px;align-items:flex-start;padding:22px 0}
+.flow-num{width:54px;height:54px;background:var(--red);color:white;font-family:var(--fd);font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;position:relative;z-index:1;box-shadow:0 0 0 4px white,0 0 0 6px var(--red)}
+.flow-body{flex:1;padding-top:10px}
+.flow-title{font-family:var(--fd);font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.flow-desc{font-size:13.5px;color:var(--gray);line-height:1.65}
+.flow-role{display:inline-block;margin-top:7px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red);border:1px solid var(--red);padding:2px 10px;border-radius:3px}
+.flow-deadline{display:inline-block;margin-top:7px;margin-left:6px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#888;border:1px solid #ccc;padding:2px 10px;border-radius:3px}
+
+/* DO / DON'T */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:28px 0}
+.c-head{display:flex;align-items:center;gap:9px;padding:11px 18px;font-family:var(--fd);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.1em;border-radius:4px 4px 0 0}
+.c-head.do{background:#16a34a;color:white}.c-head.dont{background:#dc2626;color:white}
+.c-items{border:1px solid var(--glt);border-top:none;border-radius:0 0 4px 4px;overflow:hidden}
+.c-item{display:flex;gap:10px;align-items:flex-start;padding:12px 18px;font-size:13px;color:#333;border-bottom:1px solid var(--glt);line-height:1.5}
+.c-item:last-child{border-bottom:none}
+.c-item.do-i::before{content:'✓';color:#16a34a;font-weight:700;flex-shrink:0}
+.c-item.dn-i::before{content:'✗';color:#dc2626;font-weight:700;flex-shrink:0}
+
+/* ROTEIRO DE OCORRÊNCIAS */
+.scenario{background:var(--wht);border:1px solid var(--glt);border-radius:8px;margin-bottom:16px;overflow:hidden}
+.section:nth-child(even) .scenario{background:var(--wht)}
+.scenario-head{display:flex;align-items:center;gap:12px;padding:14px 20px;background:#2e2e3a;color:var(--wht);cursor:pointer}
+.scenario-icon{font-size:20px;flex-shrink:0}
+.scenario-title{font-family:var(--fd);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex:1}
+.scenario-tag{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 10px;border-radius:3px}
+.tag-risco{background:var(--red);color:white}
+.tag-prazo{background:#d97706;color:white}
+.tag-chuva{background:#2563eb;color:white}
+.tag-seg{background:#7c3aed;color:white}
+.tag-mat{background:#059669;color:white}
+.scenario-body{padding:20px 24px}
+.scenario-body p{font-size:13.5px;color:var(--gray);margin-bottom:10px;line-height:1.65}
+.scenario-body strong{color:var(--blk)}
+.script-box{background:var(--ultra);border-left:4px solid var(--red);padding:14px 18px;border-radius:0 4px 4px 0;margin:10px 0}
+.script-label{font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
+.script-text{font-size:13px;color:#333;line-height:1.65}
+.script-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.sf{background:white;border:1px solid var(--glt);border-radius:4px;padding:9px 12px;font-size:12px;color:#555}
+.sf strong{display:block;font-size:10px;color:var(--red);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+
+/* TIMELINE */
+.timeline{display:flex;margin:28px 0;border:1px solid var(--glt);border-radius:8px;overflow:hidden}
+.tl-item{flex:1;padding:22px 18px;border-right:1px solid var(--glt);text-align:center}
+.tl-item:last-child{border-right:none}
+.tl-item.ok{background:#f0fdf4}.tl-item.warn{background:#fffbeb}.tl-item.danger{background:#fff5f5}
+.tl-time{font-family:var(--fd);font-size:26px;font-weight:900;margin-bottom:4px}
+.tl-item.ok .tl-time{color:#16a34a}.tl-item.warn .tl-time{color:#d97706}.tl-item.danger .tl-time{color:var(--red)}
+.tl-label{font-size:11.5px;color:var(--gray);font-weight:500;line-height:1.4}
+
+/* CHECKLIST */
+.chk{list-style:none;margin:18px 0}
+.chk li{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--glt);font-size:13.5px;color:#333}
+.chk li:last-child{border-bottom:none}
+.chk-box{width:21px;height:21px;border:2px solid var(--glt);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.chk-box.f{background:var(--red);border-color:var(--red)}
+.chk-box.f::after{content:'✓';color:white;font-size:11px;font-weight:700}
+
+/* PENALIDADES */
+.pen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;margin-top:28px}
+.pen-card{border-radius:8px;padding:24px 20px;position:relative;overflow:hidden}
+.pen-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.pen-card.trab{background:#fff1f0}.pen-card.trab::before{background:#f87171}
+.pen-card.cont{background:#fff7ed}.pen-card.cont::before{background:#fb923c}
+.pen-card.reg{background:#fefce8}.pen-card.reg::before{background:#facc15}
+.pen-card.civ{background:#f0f9ff}.pen-card.civ::before{background:#38bdf8}
+.pen-ico{font-size:28px;margin-bottom:12px;display:block}
+.pen-title{font-family:var(--fd);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.pen-desc{font-size:12.5px;color:#555;line-height:1.6}
+
+/* TREINAMENTO */
+.training-box{background:var(--cover-bg);border-radius:10px;padding:36px 40px;display:flex;align-items:center;gap:36px;margin-top:32px}
+.training-icon{font-size:52px;flex-shrink:0}
+.training-body{}
+.training-title{font-family:var(--fd);font-size:22px;font-weight:800;color:var(--wht);text-transform:uppercase;margin-bottom:8px}
+.training-desc{font-size:13.5px;color:#aaa;margin-bottom:16px;line-height:1.6}
+.training-link{display:inline-flex;align-items:center;gap:8px;background:var(--red);color:white;font-family:var(--fd);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:10px 22px;text-decoration:none;border-radius:4px;transition:background .2s}
+.training-link:hover{background:var(--red-dk)}
+.training-modules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}
+.tm{background:#222;border-radius:6px;padding:14px 16px;color:#ccc;font-size:12.5px}
+.tm-dur{font-family:var(--fd);font-size:11px;color:var(--red);font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em}
+
+/* FOOTER */
+.doc-footer{background:var(--cover-bg);color:#aaa;padding:36px 68px;display:flex;justify-content:space-between;align-items:center;font-size:11.5px}
+.df-logo{display:flex;align-items:center;gap:0}
+.df-logo svg{height:28px;width:auto;opacity:.8}
+
+@media(max-width:900px){
+  .sidebar{display:none}.main{max-width:100%}.layout{display:block}
+  .section{padding:40px 24px}.compare{grid-template-columns:1fr}.timeline{flex-direction:column}
+  .tl-item{border-right:none;border-bottom:1px solid var(--glt)}.cover{padding:32px}
+  .doc-footer{padding:28px 24px;flex-direction:column;gap:16px;text-align:center}
+  .training-box{flex-direction:column;padding:24px}.training-modules{grid-template-columns:1fr}
+}
+@media print{.sidebar{display:none}.main{max-width:100%}.section{padding:32px}.cover{min-height:auto}}
+</style>
+</head>
+<body>
+
+<!-- CAPA -->
+<div class="cover">
+  <div class="c-logo">
+    <svg viewBox="0 0 1920 392.19" fill="none" xmlns="http://www.w3.org/2000/svg" style="height:52px;width:auto">
+      <path fill="#cf2927" d="M95.63,310.36h276.21c23.7,0,47.95-19.22,54.16-42.9,6.21-23.69-7.97-42.9-31.68-42.9H118.11l-22.48,85.81Z"/>
+      <path fill="#cf2927" d="M555.81,81.83h-276.21c-23.7,0-47.95,19.22-54.16,42.9-6.21,23.7,7.97,42.91,31.68,42.91h276.21l22.48-85.82Z"/>
+      <path fill="#fff" d="M643.58,210.53c-33.51,0-39.7-14.53-31.66-44.61,7.73-28.87,20.96-43.61,55.29-43.61h94.26l-8.87,33.11h-86.19c-9.09,0-13.31,3.64-15.84,13.12-2.49,9.3-.23,12.93,8.86,12.93h47.64c33.52,0,39.67,13.92,31.67,43.8-7.95,29.67-21.64,44.61-55.35,44.61h-97.92l8.81-32.9h90.04c8.89,0,13.34-3.84,15.94-13.53,2.71-10.08-.38-12.91-8.84-12.91h-47.85.01Z"/>
+      <polygon fill="#fff" points="829.48 122.32 789.96 269.87 750.4 269.87 789.92 122.32 829.48 122.32"/>
+      <path fill="#fff" d="M873.32,210.53c-33.51,0-39.7-14.53-31.66-44.61,7.73-28.87,20.96-43.61,55.29-43.61h94.26l-8.87,33.11h-86.19c-9.1,0-13.31,3.64-15.84,13.12-2.49,9.3-.23,12.93,8.86,12.93h47.65c33.52,0,39.67,13.92,31.67,43.8-7.95,29.67-21.64,44.61-55.35,44.61h-97.92l8.81-32.9h90.05c8.88,0,13.33-3.84,15.93-13.53,2.71-10.08-.38-12.91-8.84-12.91h-47.85Z"/>
+      <polygon fill="#fff" points="1054.6 154.22 1002.31 154.22 1010.85 122.32 1154.99 122.32 1146.46 154.22 1094.17 154.22 1063.19 269.87 1023.61 269.87 1054.6 154.22"/>
+      <polygon fill="#fff" points="1287.32 210.33 1191.01 210.33 1183.61 237.98 1280.72 237.98 1272.17 269.88 1135.5 269.88 1175.04 122.32 1311.3 122.32 1302.75 154.22 1206.05 154.22 1198.65 181.87 1294.95 181.87 1287.32 210.33"/>
+      <polygon fill="#fff" points="1430.47 226.89 1458.48 122.32 1495.01 122.32 1455.49 269.87 1407.45 269.87 1362.6 168.96 1335.57 269.87 1298.82 269.87 1338.36 122.32 1385.2 122.32 1430.47 226.89"/>
+      <path fill="#fff" d="M1620.49,269.88h-75.7c-43.61,0-62.05-12.51-45.67-73.66,16.39-61.17,41.61-73.89,85.21-73.89h75.3l-8.7,32.51h-75.1c-19.79,0-28.81,8.07-37.73,41.38-8.92,33.3-4.17,41.18,15.62,41.18h40.78l11.84-44.21h34.72l-20.54,76.7h-.02Z"/>
+      <polygon fill="#fff" points="1800.39 210.33 1704.09 210.33 1696.68 237.98 1793.79 237.98 1785.24 269.88 1648.57 269.88 1688.11 122.32 1824.37 122.32 1815.83 154.22 1719.13 154.22 1711.72 181.87 1808.02 181.87 1800.39 210.33"/>
+    </svg>
+  </div>
+
+  <div class="c-body">
+    <div class="c-tag">Engenharia &amp; Contratos — Documento Corporativo</div>
+    <h1 class="c-title">Manual de<br><span>Preenchimento</span><br>do RDO</h1>
+    <p class="c-sub">
+      Guia operacional padrão para registro correto do Relatório Diário de Obra
+      no sistema <strong style="color:#fff">diariodeobras.net</strong> — aplicável a todos os contratos da Sistenge.
+      Garante proteção jurídica, rastreabilidade e controle da execução.
+    </p>
+  </div>
+
+  <div class="c-foot">
+    <div>
+      <div class="c-meta"><strong>Versão</strong>1.1 — Maio/2026</div>
+      <div class="c-meta" style="margin-top:8px"><strong>Classificação</strong>Uso Interno — Departamento de Engenharia</div>
+      <div class="c-meta" style="margin-top:8px"><strong>Sistema</strong>diariodeobras.net — App &amp; Web</div>
+    </div>
+    <div class="c-ver">v1.1</div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sb-logo">
+      <svg viewBox="0 0 1920 392.19" fill="none" xmlns="http://www.w3.org/2000/svg" style="height:36px;width:auto">
+        <path fill="#cf2927" d="M95.63,310.36h276.21c23.7,0,47.95-19.22,54.16-42.9,6.21-23.69-7.97-42.9-31.68-42.9H118.11l-22.48,85.81Z"/>
+        <path fill="#cf2927" d="M555.81,81.83h-276.21c-23.7,0-47.95,19.22-54.16,42.9-6.21,23.7,7.97,42.91,31.68,42.91h276.21l22.48-85.82Z"/>
+        <path fill="#fff" d="M643.58,210.53c-33.51,0-39.7-14.53-31.66-44.61,7.73-28.87,20.96-43.61,55.29-43.61h94.26l-8.87,33.11h-86.19c-9.09,0-13.31,3.64-15.84,13.12-2.49,9.3-.23,12.93,8.86,12.93h47.64c33.52,0,39.67,13.92,31.67,43.8-7.95,29.67-21.64,44.61-55.35,44.61h-97.92l8.81-32.9h90.04c8.89,0,13.34-3.84,15.94-13.53,2.71-10.08-.38-12.91-8.84-12.91h-47.85.01Z"/>
+        <polygon fill="#fff" points="829.48 122.32 789.96 269.87 750.4 269.87 789.92 122.32 829.48 122.32"/>
+        <path fill="#fff" d="M873.32,210.53c-33.51,0-39.7-14.53-31.66-44.61,7.73-28.87,20.96-43.61,55.29-43.61h94.26l-8.87,33.11h-86.19c-9.1,0-13.31,3.64-15.84,13.12-2.49,9.3-.23,12.93,8.86,12.93h47.65c33.52,0,39.67,13.92,31.67,43.8-7.95,29.67-21.64,44.61-55.35,44.61h-97.92l8.81-32.9h90.05c8.88,0,13.33-3.84,15.93-13.53,2.71-10.08-.38-12.91-8.84-12.91h-47.85Z"/>
+        <polygon fill="#fff" points="1054.6 154.22 1002.31 154.22 1010.85 122.32 1154.99 122.32 1146.46 154.22 1094.17 154.22 1063.19 269.87 1023.61 269.87 1054.6 154.22"/>
+        <polygon fill="#fff" points="1287.32 210.33 1191.01 210.33 1183.61 237.98 1280.72 237.98 1272.17 269.88 1135.5 269.88 1175.04 122.32 1311.3 122.32 1302.75 154.22 1206.05 154.22 1198.65 181.87 1294.95 181.87 1287.32 210.33"/>
+        <polygon fill="#fff" points="1430.47 226.89 1458.48 122.32 1495.01 122.32 1455.49 269.87 1407.45 269.87 1362.6 168.96 1335.57 269.87 1298.82 269.87 1338.36 122.32 1385.2 122.32 1430.47 226.89"/>
+        <path fill="#fff" d="M1620.49,269.88h-75.7c-43.61,0-62.05-12.51-45.67-73.66,16.39-61.17,41.61-73.89,85.21-73.89h75.3l-8.7,32.51h-75.1c-19.79,0-28.81,8.07-37.73,41.38-8.92,33.3-4.17,41.18,15.62,41.18h40.78l11.84-44.21h34.72l-20.54,76.7h-.02Z"/>
+        <polygon fill="#fff" points="1800.39 210.33 1704.09 210.33 1696.68 237.98 1793.79 237.98 1785.24 269.88 1648.57 269.88 1688.11 122.32 1824.37 122.32 1815.83 154.22 1719.13 154.22 1711.72 181.87 1808.02 181.87 1800.39 210.33"/>
+      </svg>
+    </div>
+    <div class="sb-nav">
+      <div class="nav-section">Sumário</div>
+      <a class="nav-item active" href="#objetivo"><span class="nav-num">01</span>Objetivo</a>
+      <a class="nav-item" href="#responsabilidades"><span class="nav-num">02</span>Responsabilidades</a>
+      <a class="nav-item" href="#fluxo"><span class="nav-num">03</span>Fluxo de Aprovação</a>
+      <a class="nav-item" href="#campos"><span class="nav-num">04</span>Campos do RDO</a>
+      <a class="nav-item" href="#preenchimento"><span class="nav-num">05</span>Padrão de Escrita</a>
+      <a class="nav-item" href="#roteiro"><span class="nav-num">06</span>Roteiro de Ocorrências</a>
+      <a class="nav-item" href="#dodont"><span class="nav-num">07</span>Faça / Não Faça</a>
+      <a class="nav-item" href="#fotos"><span class="nav-num">08</span>Fotografia de Obra</a>
+      <a class="nav-item" href="#prazos"><span class="nav-num">09</span>Prazos Críticos</a>
+      <a class="nav-item" href="#checklist"><span class="nav-num">10</span>Checklist Diário</a>
+      <a class="nav-item" href="#penalidades"><span class="nav-num">11</span>Riscos &amp; Penalidades</a>
+      <a class="nav-item" href="#treinamento"><span class="nav-num">12</span>Treinamento</a>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- 01 OBJETIVO -->
+    <section class="section" id="objetivo">
+      <div class="sec-num">01 — Objetivo &amp; Contexto</div>
+      <h2 class="sec-title">Por que o RDO<br>é estratégico?</h2>
+      <p class="sec-lead">O Relatório Diário de Obra é o principal instrumento de registro, controle e defesa jurídica da Sistenge na execução de contratos de engenharia. Preenchê-lo corretamente não é burocracia — é gestão de risco.</p>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+          <div class="card-name">Proteção Jurídica</div>
+          <div class="card-desc">Fundamenta pleitos contratuais, defesas em autuações trabalhistas, perícias e acionamento de seguros de engenharia.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
+          <div class="card-name">Controle de Produtividade</div>
+          <div class="card-desc">Cruzamento do efetivo declarado com ponto eletrônico e medições mensais para identificar desvios e ineficiências.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+          <div class="card-name">Base para Medições</div>
+          <div class="card-desc">Histórico diário de serviços executados sustenta quantitativos de medição, boletins de avanço físico e faturamento.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+          <div class="card-name">Gestão de Efetivo</div>
+          <div class="card-desc">Headcount diário por função permite conferência cruzada com folha de pagamento, ponto eletrônico e encargos trabalhistas.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg></div>
+          <div class="card-name">Evidência Climática</div>
+          <div class="card-desc">Registro de condições impeditivas (chuva, vento, temperatura) sustenta pleitos de prorrogação de prazo contratual.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+          <div class="card-name">Memória Técnica</div>
+          <div class="card-desc">Histórico imutável e rastreável da obra para referência em garantias, manutenção, certificações e auditorias futuras.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 RESPONSABILIDADES -->
+    <section class="section" id="responsabilidades">
+      <div class="sec-num">02 — Responsabilidades</div>
+      <h2 class="sec-title">Quem faz<br>o quê?</h2>
+      <p class="sec-lead">O fluxo de responsabilidades é fixo para todos os contratos Sistenge. Cada função tem papel, prazo e consequência definidos. A ausência de qualquer etapa fragiliza o valor probatório do documento.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Função</th>
+              <th>Papel no RDO</th>
+              <th>Ação no sistema</th>
+              <th>Prazo</th>
+              <th>Grau de responsabilidade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Auxiliar / Assistente de Engenharia<br>ou Apontador</strong><br><small style="color:#999">Responsável Operacional</small></td>
+              <td>Cria o RDO diariamente. Lança todas as atividades, efetivo, clima, equipamentos e fotos.</td>
+              <td>Criar RDO, preencher todos os campos, fazer upload de fotos, submeter para aprovação.</td>
+              <td>Mesmo dia — até 17h30</td>
+              <td><span class="tb tb-r">Operacional</span></td>
+            </tr>
+            <tr>
+              <td><strong>Supervisor da Obra</strong><br><small style="color:#999">Aprovador 1</small></td>
+              <td>Valida as informações de campo, confere efetivo, verifica atividades e ocorrências. Última chance de corrigir antes do cliente.</td>
+              <td>Revisar e aprovar (ou devolver com comentário) o RDO no sistema.</td>
+              <td>D+1 — até 12h</td>
+              <td><span class="tb tb-y">Técnico</span></td>
+            </tr>
+            <tr>
+              <td><strong>Gerente do Contrato / Engenharia</strong><br><small style="color:#999">Aprovador 2</small></td>
+              <td>Confirmação gerencial. Verifica consistência com o planejamento, medição e cronograma. Libera para o cliente.</td>
+              <td>Aprovar RDO e confirmar envio ao contratante.</td>
+              <td>D+2 — até 17h</td>
+              <td><span class="tb tb-b">Gerencial</span></td>
+            </tr>
+            <tr>
+              <td><strong>Cliente / Fiscalização</strong><br><small style="color:#999">Aprovador 3</small></td>
+              <td>Atestas os serviços executados em nome do contratante. Aprovação vinculada às medições mensais.</td>
+              <td>Aprovar RDO no sistema (via acesso de cliente).</td>
+              <td>Até D+7</td>
+              <td><span class="tb tb-g">Contratual</span></td>
+            </tr>
+            <tr>
+              <td><strong>Engenheiro Responsável Técnico</strong><br><small style="color:#999">Responsabilidade Legal</small></td>
+              <td>Não opera o sistema diariamente, mas é responsável legal pelo conteúdo dos RDOs — vinculado à ART do contrato.</td>
+              <td>—</td>
+              <td>—</td>
+              <td><span class="tb tb-r">ART / Legal</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert warn">
+        <div class="alert-title">Regra importante — Substituição de aprovadores</div>
+        <p>Em caso de ausência do Aprovador 1 ou 2, o substituto designado deve constar nominalmente no campo de ocorrências do RDO naquele dia, para registro de quem exerceu a função temporariamente.</p>
+      </div>
+    </section>
+
+    <!-- 03 FLUXO -->
+    <section class="section" id="fluxo">
+      <div class="sec-num">03 — Fluxo de Aprovação</div>
+      <h2 class="sec-title">Ciclo de vida<br>do RDO</h2>
+      <p class="sec-lead">Da criação à aprovação final, cada etapa tem responsável, prazo e consequência. O RDO só tem validade plena quando aprovado pelo cliente.</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-num">1</div>
+          <div class="flow-body">
+            <div class="flow-title">Registro no campo</div>
+            <div class="flow-desc">O Auxiliar/Assistente de Engenharia ou Apontador cria o RDO no app ou web com todas as atividades do dia, efetivo por função, condição climática em dois turnos, equipamentos e fotos georeferenciadas com legenda. Após preenchimento completo, submete para aprovação.</div>
+            <span class="flow-role">Resp. Operacional</span>
+            <span class="flow-deadline">Mesmo dia — até 17h30</span>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">2</div>
+          <div class="flow-body">
+            <div class="flow-title">Aprovação 1 — Supervisor da Obra</div>
+            <div class="flow-desc">Valida as informações de campo. Verifica se todas as frentes de serviço foram registradas com localização precisa. Confirma efetivo e ocorrências. Pode devolver com comentário caso haja inconsistência. Após OK, o RDO avança para o Gerente do Contrato.</div>
+            <span class="flow-role">Supervisor da Obra</span>
+            <span class="flow-deadline">D+1 — até 12h</span>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">3</div>
+          <div class="flow-body">
+            <div class="flow-title">Aprovação 2 — Gerente do Contrato</div>
+            <div class="flow-desc">Confirma consistência gerencial com o planejamento, cronograma e medição. Verifica ocorrências que possam impactar prazo ou custo contratual. Após aprovação, o RDO é disponibilizado ao cliente para aprovação final.</div>
+            <span class="flow-role">Gerente do Contrato</span>
+            <span class="flow-deadline">D+2 — até 17h</span>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">4</div>
+          <div class="flow-body">
+            <div class="flow-title">Aprovação 3 — Cliente / Fiscalização</div>
+            <div class="flow-desc">O representante do contratante acessa o sistema e aprova os serviços. RDOs sem aprovação do cliente até D+7 devem ser cobrados formalmente por e-mail, com cópia para o Gerente do Contrato, para fins de medição e eventual pleito contratual.</div>
+            <span class="flow-role">Cliente</span>
+            <span class="flow-deadline">Até D+7 — cobrar formalmente</span>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">5</div>
+          <div class="flow-body">
+            <div class="flow-title">Arquivamento &amp; Consolidação</div>
+            <div class="flow-desc">RDOs aprovados alimentam o Boletim de Avanço Físico, o relatório mensal ao cliente e os indicadores de PCO. O RH utiliza o headcount declarado para conferência com o ponto eletrônico. Guarda mínima: 5 anos após o encerramento do contrato.</div>
+            <span class="flow-role">Engenharia / RH / PCO</span>
+            <span class="flow-deadline">Mensal / Contínuo</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 CAMPOS -->
+    <section class="section" id="campos">
+      <div class="sec-num">04 — Campos do Sistema</div>
+      <h2 class="sec-title">O que preencher<br>em cada campo?</h2>
+      <p class="sec-lead">O sistema diariodeobras.net possui módulos específicos. Abaixo o detalhamento completo de cada campo, com grau de obrigatoriedade e orientação de preenchimento.</p>
+
+      <div class="grid">
+        <div class="card">
+          <span class="badge b-red">Obrigatório</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+          <div class="card-name">Identificação do RDO</div>
+          <div class="card-desc">Número sequencial (sem lacunas), data, dia da semana, contrato, obra, endereço e responsável técnico. Deve ser idêntico ao cadastro contratual.</div>
+          <div class="card-ex">Ex.: RDO nº 544 | 07/05/2026 | Quinta-Feira | Contrato 605</div>
+        </div>
+        <div class="card">
+          <span class="badge b-red">Obrigatório</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg></div>
+          <div class="card-name">Condição Climática</div>
+          <div class="card-desc">Registrar manhã e tarde com tempo (Claro / Nublado / Chuvoso) e praticabilidade. Em caso de chuva, informar hora de início e retomada das atividades.</div>
+          <div class="card-ex">Ex.: Manhã — Chuvoso — Impraticável (07h–10h30). Tarde — Claro — Praticável.</div>
+        </div>
+        <div class="card">
+          <span class="badge b-red">Obrigatório</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+          <div class="card-name">Mão de Obra</div>
+          <div class="card-desc">Registrar TODOS os profissionais por função, separando Mão de Obra Direta (produção), Indireta (apoio/adm) e Terceiros. Incluir totais por categoria. Deve espelhar o ponto eletrônico.</div>
+          <div class="card-ex">Ex.: Eletricista (14) | Encanador (5) | Técnico de Segurança (2) | Almoxarife (1) — Total: 66</div>
+        </div>
+        <div class="card">
+          <span class="badge b-red">Obrigatório</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></div>
+          <div class="card-name">Atividades Executadas</div>
+          <div class="card-desc">Descrever cada serviço com disciplina, ação (verbo no particípio), componente/sistema, localização (pavimento/setor) e status. Um item por linha. Incluir quantitativo quando possível.</div>
+          <div class="card-ex">Ex.: "Inst. elétricas — lançamento de cabos QGBT-ILT-8PV — 8º pavimento — Em andamento."</div>
+        </div>
+        <div class="card">
+          <span class="badge b-red">Obrigatório</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+          <div class="card-name">Fotografias</div>
+          <div class="card-desc">Mínimo de 4 fotos por frente de serviço, com geolocalização ativa e data/hora visível (watermark automático do app). Cada foto deve ter legenda descritiva no padrão Sistenge. Verificar que todas carregaram antes de fechar o RDO.</div>
+          <div class="card-ex">Ex.: Legenda: "Inst. elétricas — org. de cabos QGBT-EST — sala elétrica — 8º pavimento"</div>
+        </div>
+        <div class="card">
+          <span class="badge b-ylw">Recomendado</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+          <div class="card-name">Horário de Trabalho</div>
+          <div class="card-desc">Registrar hora de início, intervalo e encerramento do expediente. Fundamental em processos trabalhistas sobre jornada e horas extras.</div>
+          <div class="card-ex">Ex.: Início: 07h30 | Intervalo: 12h–13h | Término: 17h30 | Total: 9h</div>
+        </div>
+        <div class="card">
+          <span class="badge b-ylw">Recomendado</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+          <div class="card-name">Equipamentos</div>
+          <div class="card-desc">Listar equipamentos presentes com status: disponível, em operação ou parado. Para parados, informar motivo. Relevante para controle de ativos e seguros.</div>
+          <div class="card-ex">Ex.: Andaime tubular (4 jogos — operando) | Serra circular (1 — parada — manutenção)</div>
+        </div>
+        <div class="card">
+          <span class="badge b-red">Obrigatório</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
+          <div class="card-name">Ocorrências</div>
+          <div class="card-desc">Registrar tudo que fugiu do planejado: acidentes, quase-acidentes, paralisações, pedidos do cliente, visitas de fiscalização, atrasos de material ou projeto, falhas de equipamento, interferências.</div>
+          <div class="card-ex">Ex.: "Revisão hidráulica solicitada verbalmente pelo fiscal do contratante — 3º pavimento — 14h00."</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 PADRÃO DE ESCRITA -->
+    <section class="section" id="preenchimento">
+      <div class="sec-num">05 — Padrão de Escrita</div>
+      <h2 class="sec-title">Como descrever<br>as atividades</h2>
+      <p class="sec-lead">O campo de atividades é o mais consultado em medições, perícias e auditorias. A fórmula abaixo garante clareza, rastreabilidade e valor probatório para todos os contratos.</p>
+
+      <div class="alert info">
+        <div class="alert-title">Fórmula padrão Sistenge — Campo de Atividades</div>
+        <p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;margin-top:6px;color:#1d4ed8;font-weight:600;">
+          [Disciplina] &nbsp;—&nbsp; [Serviço: verbo no particípio] &nbsp;—&nbsp; [Componente/sistema] &nbsp;—&nbsp; [Localização] &nbsp;—&nbsp; [Status] &nbsp;—&nbsp; [Quantidade]
+        </p>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Componente</th><th>O que informar</th><th>Exemplos corretos</th><th>Erros comuns</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Disciplina</strong></td><td>Instalações elétricas / Hidráulicas / Civil / SPDA / CFTV / Estrutural / etc.</td><td>"Instalações hidráulicas"</td><td>"Elétrica" (incompleto)</td></tr>
+            <tr><td><strong>Serviço</strong></td><td>Verbo no particípio descrevendo a ação executada.</td><td>"lançamento de cabos" / "instalação de tubulação" / "montagem de infraestrutura"</td><td>"trabalhou" / "fez serviços"</td></tr>
+            <tr><td><strong>Componente</strong></td><td>Código ou nome técnico do elemento: painel, circuito, ramal, tubulação, código de projeto.</td><td>"QGBT-ILT-8PV" / "tubulação Vinil Fort DN 100"</td><td>"painel elétrico" (genérico)</td></tr>
+            <tr><td><strong>Localização</strong></td><td>Pavimento, subsolo, barrilete, eixo, setor ou área de referência do projeto.</td><td>"8º pavimento" / "2º subsolo" / "Barrilete / Setor A"</td><td>"na obra" / "no prédio"</td></tr>
+            <tr><td><strong>Status</strong></td><td>Em andamento / Concluído / Pendente de aprovação / Aguardando material / Aguardando projeto</td><td>"Em andamento" / "Concluído"</td><td>Campo em branco</td></tr>
+            <tr><td><strong>Quantidade</strong></td><td>Metros, unidades, m², m³ executados no dia. Sempre que o serviço permitir mensuração.</td><td>"52 m de cabo 70mm²" / "3 pontos instalados"</td><td>Sem informação de quantidade</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert ok">
+        <div class="alert-title">Exemplos de descrições corretas</div>
+        <p><strong>Elétrica:</strong> "Instalações elétricas — lançamento de cabos alimentadores do painel QGBT-EST-1SS — 1º subsolo — Em andamento — aprox. 48m de cabo 95mm²."</p>
+        <p style="margin-top:8px"><strong>Hidráulica:</strong> "Instalações hidráulicas — instalação de tubulação água fria Vinil Fort — Barrilete — Concluído — 12m de tubo DN 50."</p>
+        <p style="margin-top:8px"><strong>Revisão solicitada pelo cliente:</strong> "Instalações hidráulicas — revisão de caimento da calha pluvial a pedido da fiscalização — 3º pavimento — Concluído."</p>
+      </div>
+    </section>
+
+    <!-- 06 ROTEIRO DE OCORRÊNCIAS -->
+    <section class="section" id="roteiro">
+      <div class="sec-num">06 — Roteiro de Ocorrências</div>
+      <h2 class="sec-title">O que registrar<br>em cada situação?</h2>
+      <p class="sec-lead">Este roteiro orienta o que incluir no RDO em cada tipo de evento que impacta a obra. Todo fato que fuja do planejado deve ser registrado — inclusive os positivos. O campo de ocorrências é o mais consultado em disputas contratuais.</p>
+
+      <!-- Chuva / Clima -->
+      <div class="scenario">
+        <div class="scenario-head">
+          <span class="scenario-icon">🌧️</span>
+          <span class="scenario-title">Paralisação por Condição Climática</span>
+          <span class="scenario-tag tag-chuva">Prazo / Prorrogação</span>
+        </div>
+        <div class="scenario-body">
+          <p>Toda paralisação por chuva, vento forte ou condição climática impeditiva deve ser registrada com horário exato, para sustentar pleito de prorrogação de prazo contratual. Campo climático + ocorrência = evidência completa.</p>
+          <div class="script-box">
+            <div class="script-label">Texto modelo para o campo Ocorrências</div>
+            <div class="script-text">"Paralisação total das atividades em razão de chuva intensa a partir das [HH:MM]. Retomada dos serviços às [HH:MM]. Total de horas improdutivas: [X]h. Registrado em condição climática: Impraticável."</div>
+          </div>
+          <div class="script-fields">
+            <div class="sf"><strong>Campo Climático</strong>Marcar: Chuvoso — Impraticável (manhã e/ou tarde)</div>
+            <div class="sf"><strong>Campo Ocorrências</strong>Hora de início, retomada e total de horas paradas</div>
+            <div class="sf"><strong>Fotografia</strong>Fotografar a chuva/água acumulada com data e hora visível</div>
+            <div class="sf"><strong>Impacto</strong>Indicar se houve impacto no cronograma do dia</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Falta de material -->
+      <div class="scenario">
+        <div class="scenario-head">
+          <span class="scenario-icon">📦</span>
+          <span class="scenario-title">Paralisação ou Redução de Ritmo por Falta de Material</span>
+          <span class="scenario-tag tag-mat">Suprimentos</span>
+        </div>
+        <div class="scenario-body">
+          <p>Falta de material que impede ou reduz a execução deve ser registrada com especificação do material, frente afetada e quem foi comunicado. Esses registros protegem a Sistenge de cobranças por atraso quando a causa é do fornecedor ou do cliente.</p>
+          <div class="script-box">
+            <div class="script-label">Texto modelo para o campo Ocorrências</div>
+            <div class="script-text">"Paralisação/redução de ritmo na frente de [disciplina] — [localização] por falta de [material/insumo]. Quantidade necessária: [X unidades/metros]. Solicitação de compra/entrega realizada em [data] pelo [responsável]. Frente remanejada para [outra atividade/local]."</div>
+          </div>
+          <div class="script-fields">
+            <div class="sf"><strong>Atividade afetada</strong>Registrar como "Aguardando material" no status</div>
+            <div class="sf"><strong>Material em falta</strong>Especificar nome técnico, código e quantidade</div>
+            <div class="sf"><strong>Comunicação</strong>Indicar quem foi comunicado (suprimentos, cliente)</div>
+            <div class="sf"><strong>Remanejamento</strong>Registrar atividade alternativa executada no período</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Falta de mão de obra -->
+      <div class="scenario">
+        <div class="scenario-head">
+          <span class="scenario-icon">👷</span>
+          <span class="scenario-title">Ausência ou Redução de Mão de Obra</span>
+          <span class="scenario-tag tag-mat">Pessoal</span>
+        </div>
+        <div class="scenario-body">
+          <p>Quando o efetivo está abaixo do planejado por falta, afastamento, acidente ou problema de terceiro, o RDO deve registrar a diferença e o impacto. Protege a Sistenge em cobranças por atraso e subsidia o RH na gestão de absenteísmo.</p>
+          <div class="script-box">
+            <div class="script-label">Texto modelo para o campo Ocorrências</div>
+            <div class="script-text">"Efetivo reduzido em relação ao planejado. Ausências: [X] profissionais da função [cargo] por [motivo: atestado médico / não comparecimento / greve de transporte / etc.]. Efetivo planejado: [XX]. Efetivo presente: [XX]. Impacto: [frente afetada / atraso estimado]."</div>
+          </div>
+          <div class="script-fields">
+            <div class="sf"><strong>Mão de Obra</strong>Registrar apenas o efetivo efetivamente presente</div>
+            <div class="sf"><strong>Função ausente</strong>Indicar qual função e quantos profissionais faltaram</div>
+            <div class="sf"><strong>Motivo</strong>Informar causa da ausência se conhecida</div>
+            <div class="sf"><strong>Impacto na produção</strong>Frentes paradas ou com ritmo reduzido</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Solicitação do cliente -->
+      <div class="scenario">
+        <div class="scenario-head">
+          <span class="scenario-icon">📋</span>
+          <span class="scenario-title">Solicitação ou Instrução do Cliente / Fiscalização</span>
+          <span class="scenario-tag tag-risco">Contratual</span>
+        </div>
+        <div class="scenario-body">
+          <p>Todo pedido do cliente — verbal ou escrito — deve ser registrado no RDO no mesmo dia. Isso transforma uma instrução informal em registro formal, protegendo a Sistenge de contestações futuras sobre alterações de escopo, retrabalhos ou serviços extras.</p>
+          <div class="script-box">
+            <div class="script-label">Texto modelo para o campo Ocorrências</div>
+            <div class="script-text">"Solicitação verbal/escrita do representante do contratante [cargo/nome] às [HH:MM]: [descrever exatamente o que foi solicitado] — Localização: [pavimento/setor]. Serviço realizado conforme orientação. [Ou: Aguardando formalização por escrito para início do serviço.]"</div>
+          </div>
+          <div class="script-fields">
+            <div class="sf"><strong>Identificação</strong>Cargo do representante que solicitou</div>
+            <div class="sf"><strong>Horário</strong>Hora exata da solicitação</div>
+            <div class="sf"><strong>Descrição</strong>O que foi pedido — detalhado e sem ambiguidade</div>
+            <div class="sf"><strong>Status</strong>Se foi executado ou aguarda formalização</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Projeto incompleto ou conflito -->
+      <div class="scenario">
+        <div class="scenario-head">
+          <span class="scenario-icon">📐</span>
+          <span class="scenario-title">Projeto Incompleto, Conflito ou Ausência de Aprovação</span>
+          <span class="scenario-tag tag-risco">Contratual</span>
+        </div>
+        <div class="scenario-body">
+          <p>Quando a frente de serviço está impedida por falta de projeto aprovado, revisão pendente ou conflito entre disciplinas, o RDO deve registrar o impedimento. Esse registro sustenta pleito de prorrogação de prazo e isenção de responsabilidade por atraso.</p>
+          <div class="script-box">
+            <div class="script-label">Texto modelo para o campo Ocorrências</div>
+            <div class="script-text">"Frente de [disciplina] — [localização] paralisada aguardando [projeto aprovado / revisão de projeto / definição do contratante sobre interferência entre [disciplina A] e [disciplina B]]. Comunicado ao responsável do contratante em [data] via [canal]. Comunicação protocolada sob [referência, se houver]."</div>
+          </div>
+          <div class="script-fields">
+            <div class="sf"><strong>Frente afetada</strong>Disciplina e localização exata</div>
+            <div class="sf"><strong>Impedimento</strong>Descrever o conflito ou pendência de projeto</div>
+            <div class="sf"><strong>Comunicação</strong>Como e quando o cliente foi informado</div>
+            <div class="sf"><strong>Atividade alternativa</strong>O que a equipe foi remanejada para fazer</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acidente ou Quase-Acidente -->
+      <div class="scenario">
+        <div class="scenario-head">
+          <span class="scenario-icon">⚠️</span>
+          <span class="scenario-title">Acidente, Quase-Acidente ou Não Conformidade de Segurança</span>
+          <span class="scenario-tag tag-seg">Segurança</span>
+        </div>
+        <div class="scenario-body">
+          <p>Todo evento de segurança — mesmo quase-acidente sem lesão — deve ser registrado no RDO com detalhamento. Esse registro demonstra que a Sistenge monitora e age sobre eventos de segurança, reduzindo exposição em autuações trabalhistas e judiciais.</p>
+          <div class="script-box">
+            <div class="script-label">Texto modelo para o campo Ocorrências</div>
+            <div class="script-text">"[Acidente / Quase-acidente / Não conformidade de segurança] ocorrido às [HH:MM] em [localização]. Descrição: [detalhar o evento]. Envolvidos: [função dos envolvidos, sem nome no RDO]. Ação imediata tomada: [primeiros socorros / paralisação da frente / isolamento da área / acionamento do SESMT]. Registro de CAT: [Sim/Não/Em andamento]."</div>
+          </div>
+          <div class="script-fields">
+            <div class="sf"><strong>Horário</strong>Hora exata do evento</div>
+            <div class="sf"><strong>Localização</strong>Pavimento e área específica</div>
+            <div class="sf"><strong>Ação tomada</strong>O que foi feito imediatamente</div>
+            <div class="sf"><strong>Fotografia</strong>Fotografar o local ANTES da intervenção</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visita de fiscalização externa -->
+      <div class="scenario">
+        <div class="scenario-head">
+          <span class="scenario-icon">🏛️</span>
+          <span class="scenario-title">Visita de Fiscalização, Auditoria ou Inspeção Externa</span>
+          <span class="scenario-tag tag-risco">Regulatório</span>
+        </div>
+        <div class="scenario-body">
+          <p>Visitas do CREA, MTE, Vigilância Sanitária, Corpo de Bombeiros, cliente ou qualquer fiscalização externa devem ser registradas no RDO com detalhamento completo. Omitir esse registro pode ser interpretado como tentativa de ocultação em processos administrativos.</p>
+          <div class="script-box">
+            <div class="script-label">Texto modelo para o campo Ocorrências</div>
+            <div class="script-text">"Visita de fiscalização/inspeção realizada por [órgão/empresa] às [HH:MM]. Representante(s): [cargo(s)]. Itens verificados: [áreas, sistemas ou documentos inspecionados]. Apontamentos/Exigências: [descrever se houver]. Prazo para atendimento: [data, se informado]. Documentação entregue/apresentada: [listar]."</div>
+          </div>
+          <div class="script-fields">
+            <div class="sf"><strong>Órgão visitante</strong>Nome do órgão ou empresa</div>
+            <div class="sf"><strong>Horário</strong>Entrada e saída da fiscalização</div>
+            <div class="sf"><strong>Apontamentos</strong>Exigências ou recomendações recebidas</div>
+            <div class="sf"><strong>Prazo</strong>Data limite para atendimento de exigências</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Equipamento parado -->
+      <div class="scenario">
+        <div class="scenario-head">
+          <span class="scenario-icon">🔧</span>
+          <span class="scenario-title">Equipamento Parado ou Falha de Infraestrutura</span>
+          <span class="scenario-tag tag-prazo">Operacional</span>
+        </div>
+        <div class="scenario-body">
+          <p>Paralisação de guindaste, gerador, betoneira, bomba, elevador de obra ou qualquer equipamento crítico deve constar no RDO com impacto declarado. Esse registro protege contra cobranças de atraso quando a causa é falha de equipamento.</p>
+          <div class="script-box">
+            <div class="script-label">Texto modelo para o campo Ocorrências</div>
+            <div class="script-text">"[Equipamento] parado desde as [HH:MM] por [falha mecânica / elétrica / manutenção preventiva / aguardando peça]. Frentes impactadas: [listar]. Manutenção acionada em [HH:MM]. Previsão de retorno: [data/hora, se informada]. Remanejamento da equipe para: [atividade alternativa]."</div>
+          </div>
+          <div class="script-fields">
+            <div class="sf"><strong>Equipamento</strong>Nome e identificação do equipamento</div>
+            <div class="sf"><strong>Causa</strong>Motivo da parada</div>
+            <div class="sf"><strong>Frentes afetadas</strong>Quais atividades foram impactadas</div>
+            <div class="sf"><strong>Ação</strong>O que foi feito para resolver</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prazo contratual -->
+      <div class="scenario">
+        <div class="scenario-head">
+          <span class="scenario-icon">📅</span>
+          <span class="scenario-title">Advertência de Prazo Contratual Crítico</span>
+          <span class="scenario-tag tag-prazo">Prazo</span>
+        </div>
+        <div class="scenario-body">
+          <p>Quando o prazo a vencer atingir marcos críticos (90, 60 e 30 dias restantes), o RDO deve conter observação explícita. Esse registro demonstra que a equipe estava ciente do prazo e tomou providências — relevante em disputas sobre responsabilidade por atraso.</p>
+          <div class="script-box">
+            <div class="script-label">Texto modelo para o campo Ocorrências</div>
+            <div class="script-text">"Informativo de prazo: restam [X] dias para o término contratual previsto em [data]. Atividades críticas pendentes: [listar]. Medidas de aceleração em andamento: [listar]. Pendências que dependem do contratante: [listar, se houver]."</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 DO / DONT -->
+    <section class="section" id="dodont">
+      <div class="sec-num">07 — Faça / Não Faça</div>
+      <h2 class="sec-title">Boas práticas<br>e erros críticos</h2>
+
+      <div class="compare">
+        <div>
+          <div class="c-head do"><svg style="width:16px;height:16px;stroke:white;fill:none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>FAÇA — Boas práticas</div>
+          <div class="c-items">
+            <div class="c-item do-i">Preencha o RDO no mesmo dia, até 17h30. RDO retroativo perde valor probatório.</div>
+            <div class="c-item do-i">Registre condição climática com praticabilidade em dois turnos (manhã/tarde).</div>
+            <div class="c-item do-i">Liste todo o efetivo por função — espelhe exatamente o ponto eletrônico.</div>
+            <div class="c-item do-i">Inclua localização precisa em cada atividade (pavimento, eixo, setor).</div>
+            <div class="c-item do-i">Fotografe antes, durante e depois de cada serviço relevante.</div>
+            <div class="c-item do-i">Registre pedidos verbais do cliente no campo de ocorrências no mesmo dia.</div>
+            <div class="c-item do-i">Informe paralisações por chuva com hora de início e retomada.</div>
+            <div class="c-item do-i">Inclua quantitativos (metros, pontos, unidades) sempre que possível.</div>
+            <div class="c-item do-i">Registre visitas de fiscalização externa com detalhamento completo.</div>
+            <div class="c-item do-i">Cobre aprovação do cliente em até D+7 por e-mail formal com cópia ao Gerente.</div>
+            <div class="c-item do-i">Verifique se todas as fotos carregaram antes de fechar o RDO.</div>
+            <div class="c-item do-i">Registre retrabalhos com causa, área afetada e quem solicitou.</div>
+          </div>
+        </div>
+        <div>
+          <div class="c-head dont"><svg style="width:16px;height:16px;stroke:white;fill:none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>NÃO FAÇA — Erros críticos</div>
+          <div class="c-items">
+            <div class="c-item dn-i">Nunca preencha RDO de dias anteriores sem nota de retificação datada.</div>
+            <div class="c-item dn-i">Não deixe campos de mão de obra em branco ou com totais sem função especificada.</div>
+            <div class="c-item dn-i">Não registre atividades sem localização ("trabalhando na obra" não tem valor).</div>
+            <div class="c-item dn-i">Não omita paralisações, mesmo que breves — toda interrupção deve ser registrada.</div>
+            <div class="c-item dn-i">Não altere RDOs já aprovados — se necessário, use addendum no RDO do dia seguinte.</div>
+            <div class="c-item dn-i">Não use "em andamento" para serviços concluídos — registre o status correto.</div>
+            <div class="c-item dn-i">Não ignore pedidos verbais do cliente — registrar no mesmo dia é obrigatório.</div>
+            <div class="c-item dn-i">Não faça upload de fotos sem legenda — foto sem contexto não comprova execução.</div>
+            <div class="c-item dn-i">Não declare efetivo diferente do ponto eletrônico — inconsistência gera risco trabalhista.</div>
+            <div class="c-item dn-i">Não deixe RDOs na fila de aprovação por mais de 7 dias sem cobrança formal.</div>
+            <div class="c-item dn-i">Não use descrições genéricas como "serviços gerais" — especifique sempre.</div>
+            <div class="c-item dn-i">Não omita quase-acidentes ou não conformidades de segurança.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 FOTOGRAFIA -->
+    <section class="section" id="fotos">
+      <div class="sec-num">08 — Fotografia de Obra</div>
+      <h2 class="sec-title">Padrão fotográfico<br>Sistenge</h2>
+      <p class="sec-lead">A documentação fotográfica é a segunda linha de defesa após o texto do RDO. Volume alto de fotos com legendas corretas e geolocalização ativa é o padrão mínimo esperado.</p>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-name">Mínimo por frente de serviço</div>
+          <div class="card-desc">4 fotos: visão geral antes da execução, detalhe durante a execução, visão geral após conclusão e close do elemento instalado (placa, código, etiqueta, bitola, diâmetro).</div>
+        </div>
+        <div class="card">
+          <div class="card-name">Metadados obrigatórios</div>
+          <div class="card-desc">O app aplica data, hora e geolocalização automaticamente via watermark. Manter GPS ativo no dispositivo. Verificar que o watermark está visível antes de fechar o RDO.</div>
+        </div>
+        <div class="card">
+          <div class="card-name">Legenda padrão</div>
+          <div class="card-desc">Seguir a mesma estrutura do texto de atividade: Disciplina — Serviço — Componente — Localização. Toda foto sem legenda é desconsiderada como evidência técnica.</div>
+        </div>
+        <div class="card">
+          <div class="card-name">Fotos de ocorrência</div>
+          <div class="card-desc">Em dano, defeito, acidente ou pedido do cliente, fotografar ANTES de qualquer intervenção. A foto "antes" é a prova mais importante — o "depois" apenas confirma a execução.</div>
+        </div>
+        <div class="card">
+          <div class="card-name">Upload e verificação</div>
+          <div class="card-desc">Sempre verificar que não há ícone de imagem quebrada após o upload. Fotos não carregadas completamente são ausência de evidência. Reenviar imediatamente se necessário.</div>
+        </div>
+        <div class="card">
+          <div class="card-name">Fotos em condições adversas</div>
+          <div class="card-desc">Em caso de chuva ou paralisação climática, fotografar o local com acúmulo de água, lona protetora ou condição que comprove a inviabilidade de execução — data e hora visíveis.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 PRAZOS -->
+    <section class="section" id="prazos">
+      <div class="sec-num">09 — Prazos Críticos</div>
+      <h2 class="sec-title">Janelas de tempo<br>e consequências</h2>
+
+      <div class="timeline">
+        <div class="tl-item ok"><div class="tl-time">D+0</div><div class="tl-label">Criação e lançamento. Até 17h30 do mesmo dia de execução.</div></div>
+        <div class="tl-item ok"><div class="tl-time">D+1</div><div class="tl-label">Aprovação 1 — Supervisor da Obra. Última correção interna.</div></div>
+        <div class="tl-item ok"><div class="tl-time">D+2</div><div class="tl-label">Aprovação 2 — Gerente do Contrato. Liberação para o cliente.</div></div>
+        <div class="tl-item warn"><div class="tl-time">D+7</div><div class="tl-label">Prazo limite para aprovação do cliente. Cobrar por e-mail formal.</div></div>
+        <div class="tl-item danger"><div class="tl-time">D+15</div><div class="tl-label">Escalar para Gerência de Contratos. Risco de glose na medição.</div></div>
+        <div class="tl-item danger"><div class="tl-time">D+30</div><div class="tl-label">Notificar formalmente. Medição em risco. Acionar jurídico se contratual.</div></div>
+      </div>
+
+      <div class="alert warn">
+        <div class="alert-title">Política de cobrança de aprovação do cliente</div>
+        <p>RDOs sem aprovação do cliente após D+7 devem ser cobrados por e-mail formal com assunto padrão: <strong>"Pendência de aprovação — RDO nº [XXX] — [Nome da Obra] — [Data]"</strong>, com cópia para o Gerente do Contrato Sistenge. Guardar o e-mail de cobrança como evidência de diligência.</p>
+      </div>
+    </section>
+
+    <!-- 10 CHECKLIST -->
+    <section class="section" id="checklist">
+      <div class="sec-num">10 — Checklist Diário</div>
+      <h2 class="sec-title">Antes de fechar<br>o RDO do dia</h2>
+      <p class="sec-lead">Use este checklist como rotina de encerramento antes de submeter o RDO para aprovação. Todos os itens marcados são obrigatórios; os não marcados são fortemente recomendados.</p>
+
+      <ul class="chk">
+        <li><div class="chk-box f"></div><div><strong>Numeração sequencial</strong> — O número do RDO é o imediatamente posterior ao do dia anterior. Sem lacunas na sequência.</div></li>
+        <li><div class="chk-box f"></div><div><strong>Data e dia da semana corretos</strong> — Conferir que a data no RDO corresponde ao dia de execução, não ao dia de preenchimento.</div></li>
+        <li><div class="chk-box f"></div><div><strong>Condição climática preenchida</strong> — Manhã e tarde com tempo e praticabilidade. Paralisações por chuva com hora exata de início e retomada.</div></li>
+        <li><div class="chk-box f"></div><div><strong>Efetivo completo e correto</strong> — Todos os profissionais lançados por função, separando MOD, MOI e Terceiros. Total confere com o ponto do dia.</div></li>
+        <li><div class="chk-box f"></div><div><strong>Todas as atividades descritas</strong> — Cada frente de serviço com disciplina, ação, componente, localização e status. Nenhuma frente sem registro.</div></li>
+        <li><div class="chk-box f"></div><div><strong>Fotos carregadas e sem erro</strong> — Verificar que não há ícone de imagem quebrada. Mínimo de 4 fotos por frente de serviço ativa.</div></li>
+        <li><div class="chk-box f"></div><div><strong>Legendas em todas as fotos</strong> — Cada foto com descrição seguindo o padrão: Disciplina — Serviço — Componente — Localização.</div></li>
+        <li><div class="chk-box f"></div><div><strong>Ocorrências registradas</strong> — Qualquer evento fora do planejado (pedido do cliente, parada, acidente, visita) está no campo específico.</div></li>
+        <li><div class="chk-box f"></div><div><strong>Solicitações do cliente formalizadas</strong> — Todo pedido verbal do cliente registrado no campo de ocorrências com cargo do solicitante e horário.</div></li>
+        <li><div class="chk-box"></div><div><strong>Horário de trabalho registrado</strong> — Início, intervalo e término do expediente informados.</div></li>
+        <li><div class="chk-box"></div><div><strong>Equipamentos registrados</strong> — Lista com status de operação. Equipamentos parados com motivo informado.</div></li>
+        <li><div class="chk-box"></div><div><strong>Quantitativos inseridos</strong> — Metros, pontos, unidades executadas no dia quando o serviço permitir mensuração.</div></li>
+        <li><div class="chk-box f"></div><div><strong>Submetido para aprovação</strong> — RDO enviado ao Supervisor da Obra (Aprovador 1) até 17h30. Notificação disparada pelo sistema.</div></li>
+      </ul>
+    </section>
+
+    <!-- 11 PENALIDADES -->
+    <section class="section" id="penalidades">
+      <div class="sec-num">11 — Riscos &amp; Penalidades</div>
+      <h2 class="sec-title">Consequências do<br>RDO falho</h2>
+      <p class="sec-lead">A ausência ou o preenchimento incorreto do RDO expõe a Sistenge a riscos simultâneos em múltiplas frentes. Cada coluna representa uma área de impacto independente.</p>
+
+      <div class="pen-grid">
+        <div class="pen-card trab">
+          <span class="pen-ico">⚖️</span>
+          <div class="pen-title">Trabalhista</div>
+          <div class="pen-desc">Sem RDO, autuações do MTE sobre jornada, vínculo de terceiros e contribuições previdenciárias ficam sem defesa. Risco de inversão do ônus da prova em reclamações sobre horas extras, funções e vínculo empregatício.</div>
+        </div>
+        <div class="pen-card cont">
+          <span class="pen-ico">📋</span>
+          <div class="pen-title">Contratual</div>
+          <div class="pen-desc">Glose de medições, retenção de pagamentos, indeferimento de pleitos de prorrogação de prazo. Em contratos com a Lei 14.133/2021 (obras públicas): multa contratual por RDO não entregue ou incompleto.</div>
+        </div>
+        <div class="pen-card reg">
+          <span class="pen-ico">🏛️</span>
+          <div class="pen-title">CREA / CAU</div>
+          <div class="pen-desc">A ausência de RDO pode caracterizar negligência profissional do Responsável Técnico vinculado à ART. Penas variam de advertência a suspensão do exercício profissional em processo ético-disciplinar.</div>
+        </div>
+        <div class="pen-card civ">
+          <span class="pen-ico">🔍</span>
+          <div class="pen-title">Pericial / Sinistro</div>
+          <div class="pen-desc">Em acidentes, sinistros ou perícias judiciais, o RDO é o documento mais consultado pelo perito. Ausência ou inconsistência pode caracterizar culpa por omissão. Seguradoras podem recusar cobertura.</div>
+        </div>
+      </div>
+
+      <div class="alert" style="margin-top:32px;">
+        <div class="alert-title">Guarda documental</div>
+        <p>Os RDOs aprovados devem ser mantidos por no mínimo <strong>5 anos após o encerramento do contrato</strong>, alinhado aos prazos prescricionais cíveis (CC art. 206) e trabalhistas (CLT art. 11). O sistema diariodeobras.net mantém nuvem com histórico; é recomendada cópia em servidor local da Sistenge.</p>
+      </div>
+    </section>
+
+    <!-- 12 TREINAMENTO -->
+    <section class="section" id="treinamento">
+      <div class="sec-num">12 — Treinamento</div>
+      <h2 class="sec-title">Capacitação no<br>sistema</h2>
+      <p class="sec-lead">O sistema diariodeobras.net disponibiliza treinamentos em vídeo para todos os perfis de usuário. É obrigatório que todos os responsáveis operacionais e aprovadores concluam os módulos antes de operar o sistema.</p>
+
+      <div class="training-box">
+        <div class="training-icon">🎓</div>
+        <div class="training-body">
+          <div class="training-title">Central de Treinamento — App Diário de Obra</div>
+          <div class="training-desc">Vídeos de treinamento em português cobrindo apresentação do sistema, demonstração completa da versão web e app, e tutoriais de funcionalidades. Acesso gratuito para todos os usuários cadastrados.</div>
+          <a class="training-link" href="https://diariodeobras.net/treinamento/" target="_blank">
+            <svg style="width:16px;height:16px;stroke:white;fill:none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Acessar Central de Treinamento
+          </a>
+          <div class="training-modules">
+            <div class="tm"><div class="tm-dur">1min 49s</div>Apresentação geral do App Diário de Obra</div>
+            <div class="tm"><div class="tm-dur">6min 20s</div>Demonstração online — versão web</div>
+            <div class="tm"><div class="tm-dur">37min 04s</div>Treinamento completo — todas as funcionalidades</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert ok" style="margin-top:28px;">
+        <div class="alert-title">Política de capacitação Sistenge</div>
+        <p>Todos os profissionais que utilizarão o sistema (Resp. Operacional, Aprovadores 1 e 2) devem assistir ao treinamento completo (37min) antes do primeiro acesso. O Aprovador 3 (Cliente) deve receber orientação da equipe Sistenge sobre o fluxo de aprovação antes do início do contrato.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="doc-footer">
+  <div class="df-logo">
+    <svg viewBox="0 0 1920 392.19" fill="none" xmlns="http://www.w3.org/2000/svg" style="height:32px;width:auto;opacity:.85">
+      <path fill="#cf2927" d="M95.63,310.36h276.21c23.7,0,47.95-19.22,54.16-42.9,6.21-23.69-7.97-42.9-31.68-42.9H118.11l-22.48,85.81Z"/>
+      <path fill="#cf2927" d="M555.81,81.83h-276.21c-23.7,0-47.95,19.22-54.16,42.9-6.21,23.7,7.97,42.91,31.68,42.91h276.21l22.48-85.82Z"/>
+      <path fill="#aaaaaa" d="M643.58,210.53c-33.51,0-39.7-14.53-31.66-44.61,7.73-28.87,20.96-43.61,55.29-43.61h94.26l-8.87,33.11h-86.19c-9.09,0-13.31,3.64-15.84,13.12-2.49,9.3-.23,12.93,8.86,12.93h47.64c33.52,0,39.67,13.92,31.67,43.8-7.95,29.67-21.64,44.61-55.35,44.61h-97.92l8.81-32.9h90.04c8.89,0,13.34-3.84,15.94-13.53,2.71-10.08-.38-12.91-8.84-12.91h-47.85.01Z"/>
+      <polygon fill="#aaaaaa" points="829.48 122.32 789.96 269.87 750.4 269.87 789.92 122.32 829.48 122.32"/>
+      <path fill="#aaaaaa" d="M873.32,210.53c-33.51,0-39.7-14.53-31.66-44.61,7.73-28.87,20.96-43.61,55.29-43.61h94.26l-8.87,33.11h-86.19c-9.1,0-13.31,3.64-15.84,13.12-2.49,9.3-.23,12.93,8.86,12.93h47.65c33.52,0,39.67,13.92,31.67,43.8-7.95,29.67-21.64,44.61-55.35,44.61h-97.92l8.81-32.9h90.05c8.88,0,13.33-3.84,15.93-13.53,2.71-10.08-.38-12.91-8.84-12.91h-47.85Z"/>
+      <polygon fill="#aaaaaa" points="1054.6 154.22 1002.31 154.22 1010.85 122.32 1154.99 122.32 1146.46 154.22 1094.17 154.22 1063.19 269.87 1023.61 269.87 1054.6 154.22"/>
+      <polygon fill="#aaaaaa" points="1287.32 210.33 1191.01 210.33 1183.61 237.98 1280.72 237.98 1272.17 269.88 1135.5 269.88 1175.04 122.32 1311.3 122.32 1302.75 154.22 1206.05 154.22 1198.65 181.87 1294.95 181.87 1287.32 210.33"/>
+      <polygon fill="#aaaaaa" points="1430.47 226.89 1458.48 122.32 1495.01 122.32 1455.49 269.87 1407.45 269.87 1362.6 168.96 1335.57 269.87 1298.82 269.87 1338.36 122.32 1385.2 122.32 1430.47 226.89"/>
+      <path fill="#aaaaaa" d="M1620.49,269.88h-75.7c-43.61,0-62.05-12.51-45.67-73.66,16.39-61.17,41.61-73.89,85.21-73.89h75.3l-8.7,32.51h-75.1c-19.79,0-28.81,8.07-37.73,41.38-8.92,33.3-4.17,41.18,15.62,41.18h40.78l11.84-44.21h34.72l-20.54,76.7h-.02Z"/>
+      <polygon fill="#aaaaaa" points="1800.39 210.33 1704.09 210.33 1696.68 237.98 1793.79 237.98 1785.24 269.88 1648.57 269.88 1688.11 122.32 1824.37 122.32 1815.83 154.22 1719.13 154.22 1711.72 181.87 1808.02 181.87 1800.39 210.33"/>
+    </svg>
+  </div>
+  <div style="text-align:center">
+    Manual de Preenchimento do RDO — Padrão Corporativo | Rev. 1.1 | Mai/2026<br>
+    Uso Interno — Departamento de Engenharia — Sistenge Construções e Comércio Ltda.
+  </div>
+  <div style="text-align:right">
+    Sistema: <strong style="color:#888">diariodeobras.net</strong>
+  </div>
+</footer>
+
+<script>
+const sections = document.querySelectorAll('section[id]');
+const navItems = document.querySelectorAll('.nav-item');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      navItems.forEach(i=>i.classList.remove('active'));
+      const a = document.querySelector(`.nav-item[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+},{threshold:.3});
+sections.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
