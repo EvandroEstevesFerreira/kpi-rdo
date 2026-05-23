@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Sistenge — Acesso Restrito</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root { --red:#cf2927; --bg:#f4f4f8; --ink:#1c1c1c; --muted:#6b6b6b; --border:#e3e3e8; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; min-height: 100vh; background: var(--bg);
+        font-family: 'Barlow', system-ui, sans-serif; color: var(--ink);
+        display: flex; align-items: center; justify-content: center;
+        padding: 24px;
+      }
+      .box {
+        background: #fff; border: 1px solid var(--border);
+        border-radius: 10px; padding: 36px 32px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.06);
+        width: 100%; max-width: 380px;
+      }
+      .logo { display: block; margin: 0 auto 20px; height: 40px; }
+      h1 {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 22px; font-weight: 600; text-align: center;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        margin: 0 0 4px 0;
+      }
+      .sub { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+      label { display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;
+              letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px; }
+      input[type=password] {
+        width: 100%; padding: 10px 12px; font-size: 14px;
+        font-family: inherit; border: 1px solid var(--border);
+        border-radius: 4px; background: #fff;
+      }
+      input[type=password]:focus { outline: 2px solid var(--red); outline-offset: -1px; border-color: var(--red); }
+      button {
+        width: 100%; margin-top: 16px; padding: 10px;
+        background: var(--red); color: #fff; border: 0;
+        border-radius: 4px; font-family: inherit; font-weight: 600;
+        font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) { background: #a31f1d; }
+      button:disabled { opacity: 0.6; cursor: not-allowed; }
+      .erro { color: var(--red); font-size: 12px; margin-top: 12px; min-height: 16px; text-align: center; }
+      .foot { font-size: 11px; color: var(--muted); text-align: center; margin-top: 18px; }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <img class="logo" src="/sistenge-logo-light-bg.svg" alt="Sistenge" />
+      <h1>Dashboard KPI RDO</h1>
+      <p class="sub">Acesso restrito a funcionários Sistenge</p>
+
+      <form id="f">
+        <label for="senha">Senha de acesso</label>
+        <input type="password" id="senha" name="senha" required autofocus autocomplete="current-password" />
+        <button type="submit" id="btn">Entrar</button>
+        <div class="erro" id="erro"></div>
+      </form>
+      <p class="foot">Sessão válida por 8 horas</p>
+    </div>
+
+    <script>
+      const form = document.getElementById('f');
+      const btn  = document.getElementById('btn');
+      const erro = document.getElementById('erro');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        erro.textContent = '';
+        btn.disabled = true;
+        btn.textContent = 'Validando…';
+        try {
+          const res = await fetch('/api/login', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ senha: document.getElementById('senha').value }),
+          });
+          if (res.ok) {
+            const params = new URLSearchParams(location.search);
+            const next   = params.get('next') || '/';
+            location.assign(next);
+            return;
+          }
+          const data = await res.json().catch(() => ({}));
+          erro.textContent = data.error || 'Erro ao autenticar';
+        } catch (err) {
+          erro.textContent = 'Falha de rede. Tente novamente.';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
+        }
+      });
+    </script>
+  </body>
+</html>
