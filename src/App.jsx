@@ -9,6 +9,7 @@ import KpiCard from './components/KpiCard';
 import AlertCard from './components/AlertCard';
 import Gauge from './components/Gauge';
 import InfoPopover from './components/InfoPopover';
+import EfetivoPanel from './components/EfetivoPanel';
 import Treinamento from './views/Treinamento';
 import { KPI_INFO } from './data/kpiInfo';
 
@@ -33,7 +34,7 @@ const gerarAlertas = (k) => {
   return out;
 };
 
-function ObraDashboard({ kpi }) {
+function ObraDashboard({ kpi, dias }) {
   const alertas = useMemo(() => gerarAlertas(kpi), [kpi]);
 
   return (
@@ -100,6 +101,8 @@ function ObraDashboard({ kpi }) {
           )}
         </div>
       </div>
+
+      <EfetivoPanel efetivo={kpi.efetivo} dias={dias} />
 
       <SobreKPIs />
     </>
@@ -288,7 +291,7 @@ export default function App() {
               </div>
             )}
 
-            {kpiAtual && <ObraDashboard kpi={kpiAtual} />}
+            {kpiAtual && <ObraDashboard kpi={kpiAtual} dias={dias} />}
           </>
         )}
       </main>

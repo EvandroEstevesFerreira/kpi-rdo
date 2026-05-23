@@ -161,6 +161,87 @@ const tipoOcorrencia = (oc) =>
 const eAprovado = (ap) => ap?.aprovado === true;
 const dataAp    = (ap) => parseDataBR(ap?.dataHora);
 
+// Extrai todas as entradas de mao de obra de um RDO (padrao + personalizada)
+const maoDeObraDe = (r) => {
+  const padrao        = r.maoDeObra?.padrao || [];
+  const personalizada = r.maoDeObra?.personalizada || [];
+  return [...padrao, ...personalizada]
+    .filter((m) => m && m.descricao && typeof m.quantidade === 'number');
+};
+
+// Calcula a media diaria de efetivo e o breakdown por funcao/categoria
+const calcularEfetivo = (rdos) => {
+  // Mapa funcao -> { totalPessoasDias, diasComRegistro, categoria }
+  const porFuncao = new Map();
+  // Mapa categoria -> { totalPessoasDias, diasComRegistro }
+  const porCategoria = new Map();
+  // Soma diaria de pessoas em cada RDO (para a media geral)
+  let somaTotalDiario = 0;
+  let diasComEfetivo  = 0;
+
+  for (const r of rdos) {
+    const itens = maoDeObraDe(r);
+    if (!itens.length) continue;
+
+    let totalNoDia = 0;
+    diasComEfetivo++;
+
+    for (const item of itens) {
+      const funcao    = item.descricao;
+      const qtd       = item.quantidade || 0;
+      const categoria = item.categoria?.descricao || 'Sem categoria';
+
+      totalNoDia += qtd;
+
+      const prevF = porFuncao.get(funcao) || { total: 0, dias: 0, categoria };
+      prevF.total += qtd;
+      prevF.dias  += 1;
+      prevF.categoria = categoria; // mantem ultima conhecida
+      porFuncao.set(funcao, prevF);
+
+      const prevC = porCategoria.get(categoria) || { total: 0, dias: 0 };
+      prevC.total += qtd;
+      prevC.dias  += 1;
+      porCategoria.set(categoria, prevC);
+    }
+
+    somaTotalDiario += totalNoDia;
+  }
+
+  const mediaDiaria = diasComEfetivo
+    ? Math.round(somaTotalDiario / diasComEfetivo)
+    : 0;
+
+  // Para "media diaria por funcao" usamos diasComEfetivo (e nao item.dias),
+  // assim o numero reflete "em media, quantos X tinhamos por dia da obra".
+  const denom = diasComEfetivo || 1;
+  const funcoes = [...porFuncao.entries()]
+    .map(([funcao, v]) => ({
+      funcao,
+      categoria: v.categoria,
+      mediaPorDia: Math.round((v.total / denom) * 10) / 10,
+      totalPessoasDias: v.total,
+      diasPresente: v.dias,
+    }))
+    .sort((a, b) => b.mediaPorDia - a.mediaPorDia);
+
+  const categorias = [...porCategoria.entries()]
+    .map(([categoria, v]) => ({
+      categoria,
+      mediaPorDia: Math.round((v.total / denom) * 10) / 10,
+      totalPessoasDias: v.total,
+    }))
+    .sort((a, b) => b.mediaPorDia - a.mediaPorDia);
+
+  return {
+    mediaDiaria,
+    diasComEfetivo,
+    totalPessoasDias: somaTotalDiario,
+    porFuncao: funcoes,
+    porCategoria: categorias,
+  };
+};
+
 // ─── Cálculo de KPIs ─────────────────────────────────────────────────────────
 /**
  * @param {Array}  rdos   - RDOs detalhados (já filtrados na janela)
@@ -237,6 +318,8 @@ export const calcularKPIs = (rdos, inicio, fim) => {
     aprovador3  * 0.20
   );
 
+  const efetivo = calcularEfetivo(rdos);
+
   return {
     taxaEmissao,
     aprovador1,
@@ -254,6 +337,7 @@ export const calcularKPIs = (rdos, inicio, fim) => {
       ap3: tempoMedio(2),
     },
     evolucaoSemanal: calcularEvolucaoSemanal(rdos, fim),
+    efetivo,
   };
 };
 
