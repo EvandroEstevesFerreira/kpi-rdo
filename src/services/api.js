@@ -248,10 +248,11 @@ const calcularEfetivo = (rdos) => {
  * @param {string} inicio - "YYYY-MM-DD"
  * @param {string} fim    - "YYYY-MM-DD"
  */
-export const calcularKPIs = (rdos, inicio, fim) => {
+export const calcularKPIs = (rdos, inicio, fim, opts = {}) => {
+  const { numObras = 1 } = opts;
   rdos = rdos || [];
   const total    = rdos.length;
-  const esperado = diasUteis(inicio, fim);
+  const esperado = diasUteis(inicio, fim) * numObras;
 
   const taxaEmissao = esperado
     ? Math.min(100, Math.round((total / esperado) * 100))
@@ -336,12 +337,12 @@ export const calcularKPIs = (rdos, inicio, fim) => {
       ap2: tempoMedio(1),
       ap3: tempoMedio(2),
     },
-    evolucaoSemanal: calcularEvolucaoSemanal(rdos, fim),
+    evolucaoSemanal: calcularEvolucaoSemanal(rdos, fim, 5, numObras),
     efetivo,
   };
 };
 
-const calcularEvolucaoSemanal = (rdos, fimStr, numSemanas = 5) => {
+const calcularEvolucaoSemanal = (rdos, fimStr, numSemanas = 5, numObras = 1) => {
   const semanas = [];
   const fim = new Date(fimStr);
 
@@ -359,7 +360,7 @@ const calcularEvolucaoSemanal = (rdos, fimStr, numSemanas = 5) => {
     const esperadoSem = diasUteis(
       inicioSem.toISOString().slice(0, 10),
       fimSem.toISOString().slice(0, 10)
-    );
+    ) * numObras;
 
     semanas.push({
       sem:       `S${numSemanas - i}`,
