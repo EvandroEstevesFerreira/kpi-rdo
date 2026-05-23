@@ -8,6 +8,7 @@ const MANUAIS = {
     versao: 'v1.1 — Maio/2026',
     classificacao: 'Uso Interno — Departamento de Engenharia',
     componente: ManualRDO,
+    versaoCompletaUrl: '/manuais/manual-rdo-completo.html',
     secoes: [
       { id: 'objetivo',          titulo: '01 · Objetivo & Contexto' },
       { id: 'responsabilidades', titulo: '02 · Responsabilidades' },
@@ -63,6 +64,16 @@ export default function Treinamento() {
         <span className="badge-corp">{cur.classificacao}</span>
         <span className="manual-versao">{cur.versao}</span>
         <span className="manual-sistema">Sistema: diariodeobras.net</span>
+        {cur.versaoCompletaUrl && (
+          <a
+            className="manual-link-completo"
+            href={cur.versaoCompletaUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            📄 Abrir versão completa em nova aba
+          </a>
+        )}
       </div>
 
       <div className="treinamento">
