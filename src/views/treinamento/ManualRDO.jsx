@@ -490,6 +490,17 @@ export default function ManualRDO() {
           <VideoCard duracao="37min 04s" titulo="Treinamento completo — todas as funcionalidades" />
         </div>
 
+        <p className="treinamento-cta">
+          <a
+            href="https://diariodeobras.net/treinamento/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-treinamento"
+          >
+            Acessar Central de Treinamento ↗
+          </a>
+        </p>
+
         <Nota tipo="info" titulo="Política de capacitação Sistenge">
           Todos os profissionais que utilizarão o sistema (Resp. Operacional, Aprovadores
           1 e 2) devem assistir ao <strong>treinamento completo (37min)</strong> antes do
