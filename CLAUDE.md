@@ -15,8 +15,8 @@ para o Gerente de Contratos e a Diretoria de Engenharia.
 | Gráficos | Recharts |
 | Proxy serverless | Vercel Edge Functions |
 | Deploy | Vercel (mesmo org do Manu CMMS) |
-| API de dados | api.diariodeobra.app/v1 (Bearer JWT) |
-| Autenticação | API Key via variável de ambiente DIARIO_API_KEY |
+| API de dados | api.diariodeobra.app/v2 (header `Token`) |
+| Autenticação | JWT no header `Token` + `App-Iss: app-web` |
 
 ## Estrutura de pastas
 
@@ -50,12 +50,10 @@ sistenge-kpi-rdo/
 ## Variáveis de ambiente necessárias
 
 ```
-# .env.local (desenvolvimento local)
-DIARIO_API_KEY=seu_jwt_aqui
-
-# Vercel (produção) — configurar em:
-# vercel.com → projeto → Settings → Environment Variables
-DIARIO_API_KEY=seu_jwt_aqui
+# .env.local (desenvolvimento local) e Vercel (produção)
+DIARIO_API_KEY=<JWT capturado do header Token no DevTools>
+DIARIO_EMPRESA_ID=654a833d61927fcb36089a85   # Sistenge
+# DIARIO_API_BASE=https://api.diariodeobra.app/v2   # opcional
 ```
 
 **NUNCA** colocar a API Key no código React (front-end).
@@ -63,20 +61,34 @@ DIARIO_API_KEY=seu_jwt_aqui
 
 ## API — endpoints relevantes
 
-Base URL: `https://api.diariodeobra.app/v1`
-Auth: `Authorization: Bearer ${DIARIO_API_KEY}`
+Base URL: `https://api.diariodeobra.app/v2/empresas/{DIARIO_EMPRESA_ID}`
 
-| Endpoint | Método | Para quê |
+Headers obrigatórios:
+- `Token: <JWT>` (NÃO é `Authorization: Bearer`)
+- `App-Iss: app-web`
+- `Accept: application/json`
+
+| Endpoint (após o prefixo /empresas/{id}) | Método | Para quê |
 |---|---|---|
-| `/obras` | GET | Lista contratos ativos |
-| `/obras/{id}` | GET | Detalhes de um contrato |
-| `/obras/{id}/relatorios` | GET | RDOs (principal para KPIs) |
+| `/obras?grupoObra=true` | GET | Lista obras + envelope (`totalObras`, `statusObra`, `obras[]`, `gruposDeObra[]`) |
+| `/obras/{id}` | GET | Detalhes de uma obra |
+| `/obras/{id}/relatorios?limite=200&ordem=desc` | GET | RDOs (principal para KPIs) |
+| `/obras/{id}/relatorios-aguardando-aprovacao` | GET | RDOs pendentes de aprovação |
 | `/obras/{id}/relatorios/{id}` | GET | Detalhes de um RDO |
 | `/obras/{id}/tarefas` | GET | Avanço físico (etapas/atividades) |
-| `/cadastros` | GET | Mão de obra, equipamentos, ocorrências |
 
-Parâmetros do endpoint de relatórios: `limit` (default 50, usar 200),
-`order` ("asc" | "desc").
+**Atenção:** parâmetros em português — `limite` (não `limit`), `ordem` (não `order`).
+
+O endpoint `/obras` retorna um envelope; o array real vem em `data.obras`.
+Filtre por `obra.status.id === 3` para obras "Em Andamento".
+
+### Identificadores reais Sistenge
+
+| ID | Nome |
+|---|---|
+| `654a8b4a43bf3a2a4d043e82` | 605 \| Fator Towers \| Unimed Maceió/AL |
+| `681a18679767d8c7960db783` | 659 \| MPD \| Unimed Contagem/MG |
+| `6a047c1c1dbf7931680f2826` | 691 \| Racional \| Garoa |
 
 ## KPIs implementados
 
@@ -166,35 +178,62 @@ vercel --prod
 Configurar a variável `DIARIO_API_KEY` no painel da Vercel antes do deploy:
 `vercel.com → sistenge-kpi-rdo → Settings → Environment Variables`
 
-## Campos da API — mapeamento defensivo
+## Campos da API — mapeamento confirmado
 
-A API pode retornar nomes de campos ligeiramente diferentes dependendo da
-versão. O `api.js` usa mapeamento defensivo:
+Validado por inspeção do payload real em 2026-05-22:
+
+### Obra (item de `data.obras` do endpoint /obras)
 
 ```js
-// Data do RDO
-r.data || r.dataRelatorio
-
-// ID do projeto
-obra._id || obra.id
-
-// Total de fotos
-r.fotos?.total || r.qtdFotos || 0
-
-// Aprovações
-r.aprovacoes || r.assinaturas || []
-
-// Status de aprovação
-ap.status === 'aprovado'   // aprovado
-ap.status === 'pendente'   // aguardando
-ap.status === 'aguardando' // alternativo
-
-// Data de criação
-r.criadoEm || r.data
+obra._id            // "654a8b4a43bf3a2a4d043e82"
+obra.nome           // "605 | Fator Towers | Unimed Maceió/AL"
+obra.status.id      // 1=Não Iniciada | 2=Paralisada | 3=Em Andamento | 4=Concluída
+obra.totalRelatorios
+obra.totalFotos
+obra.fotoUrl
+obra.grupo._id
 ```
 
-Se a API retornar campos com nomes diferentes, atualizar o mapeamento
-em `src/services/api.js` na função `calcularKPIs`.
+### RDO — listing leve (/obras/{id}/relatorios)
+
+```js
+r._id
+r.data              // "20/05/2026" (DD/MM/YYYY — usar parseDataBR())
+r.numero            // 553
+r.totalFotos        // 60
+r.status.id         // 1=Preenchendo, etc.
+r.modeloDeRelatorio.assinaturasTipo  // "eletronica"
+r.linkPdf
+```
+
+O listing NÃO traz aprovações, ocorrências, mão-de-obra, atividades ou fotos.
+Para esses campos é preciso buscar o detalhe individual.
+
+### RDO — detalhe (/obras/{id}/relatorios/{rdoId})
+
+```js
+// Datas (todas em formato BR — usar parseDataBR())
+r.data                         // "20/05/2026"
+r.log.criadoPor.dataHora       // "21/05/2026 14:05" — criação real
+
+// Fotos (total real)
+r.galeriaDeFotos.length
+
+// Aprovações eletrônicas — array ordenado conforme fluxo
+r.assinaturasEletronicaUrl[i] = {
+  usuarioNome,                 // "Janilma Barbosa"
+  usuarioCargo,                // "Encarregado de Obras Técnico"
+  usuarioEmail,
+  aprovado,                    // BOOLEAN — não é string status!
+  proximoAprovar,              // BOOLEAN — quem está na fila agora
+  dataHora,                    // "DD/MM/YYYY HH:mm" ou null
+}
+
+// Ocorrências
+r.ocorrencias = []             // estrutura a confirmar
+```
+
+Se algum campo divergir, atualizar os extratores em `src/services/api.js`.
 
 ## Tarefas pendentes na primeira sessão
 

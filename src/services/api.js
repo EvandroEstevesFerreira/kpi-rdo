@@ -1,8 +1,15 @@
 // ─── Configuração ─────────────────────────────────────────────────────────────
-const BASE      = '/api/diario';
-const USE_MOCK  = import.meta.env.VITE_USE_MOCK === 'true';
+// Todas as chamadas passam pelo proxy serverless em /api/diario, que
+// injeta os headers Token, App-Iss e o prefixo /empresas/{empresaId}.
+const BASE     = '/api/diario';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
-// Cache em memória — evita chamadas repetidas em 5 min
+// Concorrência máxima ao buscar detalhes de RDO em paralelo.
+// Suficiente pra carregar ~90 RDOs em poucos segundos sem
+// estourar limites do upstream.
+const FETCH_CONCURRENCY = 6;
+
+// Cache em memória
 const _cache = new Map();
 
 const cached = async (key, fn, ttl = 300_000) => {
@@ -15,10 +22,11 @@ const cached = async (key, fn, ttl = 300_000) => {
 
 // ─── Requisição base ─────────────────────────────────────────────────────────
 const get = async (path, params = {}) => {
-  const qs  = new URLSearchParams(
-    Object.entries(params).filter(([, v]) => v != null)
-  ).toString();
-  const url = `${BASE}${path}${qs ? '?' + qs : ''}`;
+  const qs = new URLSearchParams({
+    ...Object.fromEntries(Object.entries(params).filter(([, v]) => v != null)),
+    t: Date.now(),
+  }).toString();
+  const url = `${BASE}${path}?${qs}`;
   const res = await fetch(url);
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
@@ -27,36 +35,104 @@ const get = async (path, params = {}) => {
   return res.json();
 };
 
+// ─── Parser de datas brasileiras ─────────────────────────────────────────────
+// A API retorna datas no formato "DD/MM/YYYY" ou "DD/MM/YYYY HH:mm".
+// new Date() não interpreta esse formato corretamente.
+export const parseDataBR = (s) => {
+  if (!s || typeof s !== 'string') return null;
+  const [dataParte, horaParte] = s.trim().split(/\s+/);
+  const [dia, mes, ano] = dataParte.split('/').map(Number);
+  if (!dia || !mes || !ano) return null;
+  const [hh = 0, mm = 0] = (horaParte || '').split(':').map(Number);
+  return new Date(ano, mes - 1, dia, hh, mm);
+};
+
+const formatDataBR = (d) => {
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+};
+
 // ─── Endpoints ───────────────────────────────────────────────────────────────
 
-/** Lista todas as obras ativas */
+/** Lista obras ativas (status.id === 3 = Em Andamento) */
 export const getObras = () =>
-  cached('obras', () => get('/obras', { status: 'active' }), 600_000);
+  cached('obras', async () => {
+    const data = await get('/obras', { grupoObra: true });
+    return (data.obras || []).filter((o) => o?.status?.id === 3);
+  }, 600_000);
 
-/** Detalhes de uma obra */
 export const getObraDetalhes = (id) =>
   cached(`obra-${id}`, () => get(`/obras/${id}`), 600_000);
 
-/** RDOs de uma obra — limit alto para cobrir 30+ dias */
-export const getRelatorios = (projectId, limit = 200) =>
+/** Listing leve de RDOs */
+export const getRelatorios = (obraId, limite = 200) =>
   cached(
-    `rdos-${projectId}`,
-    () => get(`/obras/${projectId}/relatorios`, { limit, order: 'desc' }),
-    300_000
+    `rdos-${obraId}`,
+    () => get(`/obras/${obraId}/relatorios`, { limite, ordem: 'desc' }),
+    300_000,
   );
 
-/** Lista de tarefas — avanço físico */
-export const getTarefas = (projectId) =>
+/** Detalhe completo de 1 RDO (necessário para extrair aprovações) */
+export const getRelatorioDetalhe = (obraId, rdoId) =>
   cached(
-    `tarefas-${projectId}`,
-    () => get(`/obras/${projectId}/tarefas`),
-    300_000
+    `rdo-${obraId}-${rdoId}`,
+    () => get(`/obras/${obraId}/relatorios/${rdoId}`),
+    600_000,
   );
 
-/** Limpa o cache (útil para forçar refresh) */
+export const getPendentesAprovacao = (obraId) =>
+  cached(
+    `pendentes-${obraId}`,
+    () => get(`/obras/${obraId}/relatorios-aguardando-aprovacao`),
+    300_000,
+  );
+
 export const limparCache = () => _cache.clear();
 
-// ─── Utilitários de data ──────────────────────────────────────────────────────
+// ─── Buscador com concorrência limitada ──────────────────────────────────────
+const pMap = async (items, fn, concurrency = FETCH_CONCURRENCY) => {
+  const results = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (true) {
+      const idx = cursor++;
+      if (idx >= items.length) return;
+      try {
+        results[idx] = await fn(items[idx], idx);
+      } catch (err) {
+        console.warn('[pMap] item falhou', items[idx], err.message);
+        results[idx] = null;
+      }
+    }
+  });
+  await Promise.all(workers);
+  return results;
+};
+
+/**
+ * Carrega o detalhe completo dos RDOs de uma obra cuja data esteja
+ * dentro da janela [inicio, fim]. Retorna apenas os detalhes (RDOs completos).
+ */
+export const getRelatoriosNaJanela = async (obraId, inicio, fim) => {
+  const lista   = await getRelatorios(obraId);
+  const inicioD = new Date(inicio);
+  const fimD    = new Date(fim);
+
+  const idsNaJanela = lista
+    .filter((r) => {
+      const d = parseDataBR(r.data);
+      return d && d >= inicioD && d <= fimD;
+    })
+    .map((r) => r._id);
+
+  const detalhes = await pMap(idsNaJanela, (id) =>
+    getRelatorioDetalhe(obraId, id)
+  );
+  return detalhes.filter(Boolean);
+};
+
+// ─── Utilitários de cálculo ──────────────────────────────────────────────────
 const diasUteis = (inicio, fim) => {
   let count = 0;
   const d   = new Date(inicio);
@@ -70,49 +146,46 @@ const diasUteis = (inicio, fim) => {
 };
 
 const diffDias = (a, b) =>
-  Math.abs((new Date(b) - new Date(a)) / 86_400_000);
+  Math.abs((b.getTime() - a.getTime()) / 86_400_000);
 
-// ─── Extratores defensivos (lida com variações da API) ───────────────────────
-const dataRdo      = (r) => r.data || r.dataRelatorio || r.createdAt;
-const idProjeto    = (o) => o._id  || o.id;
-const qtdFotos     = (r) => r.fotos?.total ?? r.qtdFotos ?? r.totalFotos ?? 0;
-const aprovacoes   = (r) => r.aprovacoes || r.assinaturas || [];
-const criadoEm     = (r) => r.criadoEm   || r.createdAt   || r.data;
-const tipoOcorrencia = (oc) => oc.tipo || oc.tipoOcorrencia || oc.categoria || 'Outros';
+// ─── Extratores (alinhados à API real) ───────────────────────────────────────
+const dataRdo    = (r) => parseDataBR(r.data);
+const criadoEm   = (r) => parseDataBR(r.log?.criadoPor?.dataHora) || parseDataBR(r.data);
+const aprovacoes = (r) => r.assinaturasEletronicaUrl || [];
+const qtdFotos   = (r) => r.galeriaDeFotos?.length ?? r.totalFotos ?? 0;
+const ocorrenciasDe = (r) =>
+  Array.isArray(r.ocorrencias) ? r.ocorrencias : [];
+const tipoOcorrencia = (oc) =>
+  oc.tipo || oc.descricao || oc.categoria?.descricao || 'Outros';
 
-const eAprovado  = (ap) => ['aprovado', 'approved'].includes(ap.status);
-const ePendente  = (ap) => ['pendente', 'aguardando', 'pending'].includes(ap.status);
-const dataAp     = (ap) => ap.dataAprovacao || ap.dataAssinatura || ap.updatedAt;
+const eAprovado = (ap) => ap?.aprovado === true;
+const dataAp    = (ap) => parseDataBR(ap?.dataHora);
 
 // ─── Cálculo de KPIs ─────────────────────────────────────────────────────────
-
 /**
- * Recebe array de RDOs brutos da API e retorna todos os KPIs calculados.
- * @param {Array}  relatorios  - RDOs retornados pelo endpoint /relatorios
- * @param {string} inicio      - Data inicial "YYYY-MM-DD"
- * @param {string} fim         - Data final   "YYYY-MM-DD"
+ * @param {Array}  rdos   - RDOs detalhados (já filtrados na janela)
+ * @param {string} inicio - "YYYY-MM-DD"
+ * @param {string} fim    - "YYYY-MM-DD"
  */
-export const calcularKPIs = (relatorios, inicio, fim) => {
-  const rdos = (relatorios || []).filter((r) => {
-    const d = new Date(dataRdo(r));
-    return d >= new Date(inicio) && d <= new Date(fim);
-  });
-
+export const calcularKPIs = (rdos, inicio, fim) => {
+  rdos = rdos || [];
   const total    = rdos.length;
   const esperado = diasUteis(inicio, fim);
 
-  // Taxa de emissão
   const taxaEmissao = esperado
     ? Math.min(100, Math.round((total / esperado) * 100))
     : 0;
 
-  // % RDOs aprovados dentro do prazo pelo aprovador de índice `idx`
+  // % RDOs aprovados pelo aprovador `idx` dentro do prazo (dias)
   const prazoOk = (idx, limiteDias) => {
     if (!total) return 0;
     const ok = rdos.filter((r) => {
       const ap = aprovacoes(r)[idx];
-      if (!ap || !eAprovado(ap)) return false;
-      return diffDias(criadoEm(r), dataAp(ap)) <= limiteDias;
+      if (!eAprovado(ap)) return false;
+      const inicioRdo = criadoEm(r);
+      const fimAp     = dataAp(ap);
+      if (!inicioRdo || !fimAp) return false;
+      return diffDias(inicioRdo, fimAp) <= limiteDias;
     }).length;
     return Math.round((ok / total) * 100);
   };
@@ -121,35 +194,35 @@ export const calcularKPIs = (relatorios, inicio, fim) => {
   const aprovador2 = prazoOk(1, 2);
   const aprovador3 = prazoOk(2, 7);
 
-  // Tempo médio de aprovação por aprovador (em dias)
   const tempoMedio = (idx) => {
     const tempos = rdos
       .map((r) => {
         const ap = aprovacoes(r)[idx];
-        if (!ap || !eAprovado(ap)) return null;
-        return diffDias(criadoEm(r), dataAp(ap));
+        if (!eAprovado(ap)) return null;
+        const inicioRdo = criadoEm(r);
+        const fimAp     = dataAp(ap);
+        if (!inicioRdo || !fimAp) return null;
+        return diffDias(inicioRdo, fimAp);
       })
       .filter((t) => t != null);
     if (!tempos.length) return null;
     return +(tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(1);
   };
 
-  // RDOs com pelo menos 1 aprovação pendente
+  // RDO com pelo menos 1 aprovação ainda não aprovada
   const pendentes = rdos.filter((r) =>
-    aprovacoes(r).some(ePendente)
+    aprovacoes(r).some((ap) => !eAprovado(ap))
   ).length;
 
-  // Média de fotos por RDO
   const mediaFotos = total
     ? Math.round(rdos.reduce((s, r) => s + qtdFotos(r), 0) / total)
     : 0;
 
-  // Ocorrências agrupadas por tipo
   const ocorrencias = Object.entries(
     rdos
-      .flatMap((r) => r.ocorrencias || [])
+      .flatMap((r) => ocorrenciasDe(r))
       .reduce((acc, oc) => {
-        const tipo   = tipoOcorrencia(oc);
+        const tipo = tipoOcorrencia(oc);
         acc[tipo] = (acc[tipo] || 0) + 1;
         return acc;
       }, {})
@@ -157,16 +230,12 @@ export const calcularKPIs = (relatorios, inicio, fim) => {
     .map(([tipo, qtd]) => ({ tipo, qtd }))
     .sort((a, b) => b.qtd - a.qtd);
 
-  // Conformidade geral ponderada
   const conformidade = Math.round(
     taxaEmissao * 0.40 +
     aprovador1  * 0.20 +
     aprovador2  * 0.20 +
     aprovador3  * 0.20
   );
-
-  // Evolução semanal (últimas 5 semanas)
-  const evolucaoSemanal = calcularEvolucaoSemanal(rdos, fim);
 
   return {
     taxaEmissao,
@@ -177,31 +246,30 @@ export const calcularKPIs = (relatorios, inicio, fim) => {
     mediaFotos,
     ocorrencias,
     conformidade,
-    totalRdos:  total,
-    esperados:  esperado,
+    totalRdos: total,
+    esperados: esperado,
     tempoMedio: {
       ap1: tempoMedio(0),
       ap2: tempoMedio(1),
       ap3: tempoMedio(2),
     },
-    evolucaoSemanal,
+    evolucaoSemanal: calcularEvolucaoSemanal(rdos, fim),
   };
 };
 
-// Agrupa RDOs por semana e calcula taxa de emissão em cada uma
 const calcularEvolucaoSemanal = (rdos, fimStr, numSemanas = 5) => {
   const semanas = [];
   const fim = new Date(fimStr);
 
   for (let i = numSemanas - 1; i >= 0; i--) {
-    const fimSem   = new Date(fim);
+    const fimSem = new Date(fim);
     fimSem.setDate(fim.getDate() - i * 7);
     const inicioSem = new Date(fimSem);
     inicioSem.setDate(fimSem.getDate() - 6);
 
     const rdosSem = rdos.filter((r) => {
-      const d = new Date(dataRdo(r));
-      return d >= inicioSem && d <= fimSem;
+      const d = dataRdo(r);
+      return d && d >= inicioSem && d <= fimSem;
     });
 
     const esperadoSem = diasUteis(
@@ -210,8 +278,8 @@ const calcularEvolucaoSemanal = (rdos, fimStr, numSemanas = 5) => {
     );
 
     semanas.push({
-      sem:      `S${numSemanas - i}`,
-      emitidos: rdosSem.length,
+      sem:       `S${numSemanas - i}`,
+      emitidos:  rdosSem.length,
       esperados: esperadoSem,
       taxa:      esperadoSem
         ? Math.min(100, Math.round((rdosSem.length / esperadoSem) * 100))
@@ -224,3 +292,6 @@ const calcularEvolucaoSemanal = (rdos, fimStr, numSemanas = 5) => {
 
   return semanas;
 };
+
+// Re-exporta utilidades de data para uso em componentes
+export { formatDataBR };
