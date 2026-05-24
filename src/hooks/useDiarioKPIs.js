@@ -48,7 +48,7 @@ export function useDiarioKPIs(dias = 30) {
       const todosRdos = [];
       for (const { id, obra, rdos } of pares) {
         kpisMap[id] = { ...calcularKPIs(rdos, inicio, fim), obra };
-        todosRdos.push(...rdos);
+        for (const r of rdos) todosRdos.push({ ...r, __obraNome: obra.nome });
       }
 
       const consolidadoObra = {
