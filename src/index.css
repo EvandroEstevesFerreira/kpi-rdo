@@ -874,6 +874,18 @@ a { color: inherit; }
   display: block;
 }
 
+.manual-host {
+  display: block;
+  width: 100%;
+}
+.manual-erro {
+  padding: 24px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
 .manual-open-tab {
   position: fixed;
   top: 16px;
