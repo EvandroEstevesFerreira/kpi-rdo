@@ -42,6 +42,19 @@ export default function Treinamento() {
 
         shadow.innerHTML =
           `${links}<style>${styles}\n${OVERRIDES}</style>${bodyHtml}`;
+
+        // Browsers nao resolvem '#ancora' dentro de Shadow DOM
+        // automaticamente. Intercepta cliques e faz scroll manual.
+        shadow.addEventListener('click', (e) => {
+          const a = e.target.closest('a[href^="#"]');
+          if (!a) return;
+          const id = a.getAttribute('href').slice(1);
+          if (!id) return;
+          const alvo = shadow.getElementById(id);
+          if (!alvo) return;
+          e.preventDefault();
+          alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
       })
       .catch((e) => {
         if (cancelado) return;
