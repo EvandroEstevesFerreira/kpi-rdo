@@ -1,52 +1,52 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const MANUAL_URL = '/manuais/manual-rdo-completo.html';
 
+const OVERRIDES = `
+  :host { display: block; }
+  body { margin: 0; }
+  /* A capa originalmente tinha min-height: 100vh, o que deixava 1 tela
+     inteira preta antes do conteudo quando incorporado no dashboard. */
+  .cover { min-height: auto !important; }
+`;
+
 export default function Treinamento() {
-  const iframeRef = useRef(null);
+  const hostRef = useRef(null);
+  const [erro, setErro] = useState(null);
 
   useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
+    const host = hostRef.current;
+    if (!host) return;
 
-    let ro = null;
+    const shadow = host.shadowRoot || host.attachShadow({ mode: 'open' });
+    let cancelado = false;
 
-    const resize = () => {
-      const doc = iframe.contentDocument;
-      if (!doc?.documentElement) return;
-      const h = Math.max(
-        doc.documentElement.scrollHeight,
-        doc.body?.scrollHeight || 0
-      );
-      iframe.style.height = `${h}px`;
-    };
+    fetch(MANUAL_URL)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then((html) => {
+        if (cancelado) return;
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const styles = Array.from(doc.querySelectorAll('style'))
+          .map((s) => s.textContent)
+          .join('\n');
+        const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
+          .map((l) => `<link rel="stylesheet" href="${l.getAttribute('href')}">`)
+          .join('');
+        const bodyHtml = doc.body.innerHTML;
 
-    const onLoad = () => {
-      resize();
-      try {
-        if (typeof ResizeObserver !== 'undefined') {
-          ro = new ResizeObserver(resize);
-          if (iframe.contentDocument?.body) {
-            ro.observe(iframe.contentDocument.body);
-          }
-        }
-        iframe.contentWindow?.addEventListener('load', resize);
-        const imgs = iframe.contentDocument?.images || [];
-        for (const img of imgs) {
-          if (!img.complete) img.addEventListener('load', resize, { once: true });
-        }
-      } catch (e) {
-        console.warn('[Treinamento] auto-resize listener falhou', e);
-      }
-    };
-
-    iframe.addEventListener('load', onLoad);
-    window.addEventListener('resize', resize);
+        shadow.innerHTML =
+          `${links}<style>${styles}\n${OVERRIDES}</style>${bodyHtml}`;
+      })
+      .catch((e) => {
+        if (cancelado) return;
+        setErro(e.message);
+      });
 
     return () => {
-      iframe.removeEventListener('load', onLoad);
-      window.removeEventListener('resize', resize);
-      ro?.disconnect();
+      cancelado = true;
     };
   }, []);
 
@@ -63,13 +63,13 @@ export default function Treinamento() {
         <span className="manual-open-tab-label">Abrir em nova aba</span>
       </a>
 
-      <iframe
-        ref={iframeRef}
-        src={MANUAL_URL}
-        title="Manual de Preenchimento do RDO"
-        className="manual-iframe"
-        scrolling="no"
-      />
+      {erro ? (
+        <div className="manual-erro">
+          Falha ao carregar manual: {erro}
+        </div>
+      ) : (
+        <div ref={hostRef} className="manual-host" />
+      )}
     </div>
   );
 }
