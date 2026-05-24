@@ -110,6 +110,17 @@ a { color: inherit; }
   border-left-color: var(--red);
   color: #fff !important;
 }
+.nav-item-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+}
+.nav-item-link .ext-arrow {
+  color: var(--red);
+  font-size: 14px;
+  margin-left: 6px;
+}
 
 .sidebar-backdrop {
   display: none;
@@ -1496,6 +1507,15 @@ a { color: inherit; }
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
+
+.panel-ext-link {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--red);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.panel-ext-link:hover { text-decoration: underline; }
 
 .efetivo-resumo {
   display: grid;
