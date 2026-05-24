@@ -29,6 +29,14 @@ export default function EfetivoPanel({ efetivo, dias }) {
         <span className="panel-sub">
           Últimos {dias} dias · {diasComEfetivo} RDOs com efetivo
         </span>
+        <a
+          className="panel-ext-link"
+          href="https://web.diariodeobra.app/#/app/analise-de-dados/mao-de-obra/histograma"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Histograma completo ↗
+        </a>
       </div>
 
       <div className="efetivo-resumo">

@@ -236,6 +236,16 @@ export default function App() {
           >
             📘 Treinamento e Usabilidade
           </button>
+          <a
+            className="nav-item-flat nav-item-link"
+            href="https://web.diariodeobra.app/#/app/analise-de-dados/mao-de-obra/histograma"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Abre o histograma de mão de obra no diariodeobra.app"
+          >
+            📊 Histograma Mão de Obra
+            <span className="ext-arrow" aria-hidden="true">↗</span>
+          </a>
         </nav>
 
         <div className="sidebar-foot">
