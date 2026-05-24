@@ -78,8 +78,8 @@ function ObraDashboard({ kpi, dias }) {
       </div>
 
       <HistogramaPanel
-        porMes={kpi.efetivo?.porMes}
-        categoriaNomes={kpi.efetivo?.categoriaNomes}
+        porMes={kpi.historicoMensal?.porMes}
+        categoriaNomes={kpi.historicoMensal?.categoriaNomes}
       />
 
       <div className="dash-row dash-row-2col">

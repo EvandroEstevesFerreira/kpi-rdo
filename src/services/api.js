@@ -172,7 +172,8 @@ const maoDeObraDe = (r) => {
 const MESES_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 // Calcula a media diaria de efetivo e o breakdown por funcao/categoria
-const calcularEfetivo = (rdos) => {
+export const calcularEfetivo = (rdos, opts = {}) => {
+  const { preencherMeses } = opts;
   // Mapa funcao -> { totalPessoasDias, diasComRegistro, categoria }
   const porFuncao = new Map();
   // Mapa categoria -> { totalPessoasDias, diasComRegistro }
@@ -262,7 +263,23 @@ const calcularEfetivo = (rdos) => {
   // Lista ordenada de categorias (para series do grafico)
   const categoriaNomes = categorias.map((c) => c.categoria);
 
-  // Bucket mensal -> media diaria por categoria
+  // Bucket mensal -> media diaria por categoria.
+  // Se preencherMeses for fornecido, garante uma linha para cada mes
+  // do intervalo (mesmo sem dados), gerando colunas vazias no grafico.
+  const mesKeysSet = new Set(porMesMap.keys());
+  if (preencherMeses?.inicio && preencherMeses?.fim) {
+    const ini = new Date(preencherMeses.inicio);
+    const fim = new Date(preencherMeses.fim);
+    const cur = new Date(ini.getFullYear(), ini.getMonth(), 1);
+    while (cur <= fim) {
+      const k = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
+      if (!mesKeysSet.has(k)) {
+        porMesMap.set(k, { label: MESES_PT[cur.getMonth()], categorias: {} });
+      }
+      cur.setMonth(cur.getMonth() + 1);
+    }
+  }
+
   const porMes = [...porMesMap.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([mesKey, m]) => {
