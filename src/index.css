@@ -185,6 +185,106 @@ a { color: inherit; }
 
 .topbar-title { flex: 1; min-width: 0; }
 
+.topbar-obra-foto {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Ranking de aprovadores */
+.panel-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin: -4px 0 12px;
+}
+.aprovadores-table-wrap { overflow-x: auto; }
+.aprovadores-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.aprovadores-table th,
+.aprovadores-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.aprovadores-table th {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.aprovadores-table .num { text-align: right; white-space: nowrap; }
+.aprov-nome  { font-weight: 600; }
+.aprov-cargo { font-size: 11px; color: var(--muted); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 12px;
+}
+.badge.ok   { background: #dcfce7; color: #15803d; }
+.badge.warn { background: #fef3c7; color: #b45309; }
+.badge.bad  { background: #fee2e2; color: #b91c1c; }
+
+/* Ultimos RDOs */
+.ultimos-rdos { display: flex; flex-direction: column; gap: 6px; }
+.ultimo-rdo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fafafc;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rdo-info {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.rdo-numero {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  color: var(--red);
+  font-size: 16px;
+}
+.rdo-data { font-size: 13px; color: var(--ink); }
+.rdo-obra { font-size: 12px; color: var(--muted); }
+.rdo-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.rdo-status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.status-aprovado { background: #dcfce7; color: #15803d; }
+.status-parcial  { background: #fef3c7; color: #b45309; }
+.status-pendente { background: #fee2e2; color: #b91c1c; }
+.rdo-fotos { color: var(--muted); }
+.rdo-pdf {
+  color: var(--red);
+  text-decoration: none;
+  font-weight: 600;
+}
+.rdo-pdf:hover { text-decoration: underline; }
+
 .topbar h1 {
   font-size: 28px;
   text-transform: uppercase;

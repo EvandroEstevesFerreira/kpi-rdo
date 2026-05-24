@@ -10,6 +10,8 @@ import AlertCard from './components/AlertCard';
 import Gauge from './components/Gauge';
 import InfoPopover from './components/InfoPopover';
 import EfetivoPanel from './components/EfetivoPanel';
+import AprovadoresPanel from './components/AprovadoresPanel';
+import UltimosRdosPanel from './components/UltimosRdosPanel';
 import Treinamento from './views/Treinamento';
 import { KPI_INFO } from './data/kpiInfo';
 
@@ -103,6 +105,13 @@ function ObraDashboard({ kpi, dias }) {
       </div>
 
       <EfetivoPanel efetivo={kpi.efetivo} dias={dias} />
+
+      <AprovadoresPanel ranking={kpi.aprovadoresRanking} />
+
+      <UltimosRdosPanel
+        rdos={kpi.ultimosRdos}
+        mostrarObra={!!kpi.obra?.__consolidado}
+      />
 
       <SobreKPIs />
     </>
@@ -244,6 +253,14 @@ export default function App() {
             aria-label="Abrir menu"
             onClick={() => setMenuOpen(true)}
           >☰</button>
+
+          {view === 'dashboard' && kpiAtual?.obra?.fotoUrl && !kpiAtual.obra.__consolidado && (
+            <img
+              src={kpiAtual.obra.fotoUrl}
+              alt=""
+              className="topbar-obra-foto"
+            />
+          )}
 
           <div className="topbar-title">
             <h1>

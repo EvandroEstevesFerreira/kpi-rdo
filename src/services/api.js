@@ -339,7 +339,65 @@ export const calcularKPIs = (rdos, inicio, fim, opts = {}) => {
     },
     evolucaoSemanal: calcularEvolucaoSemanal(rdos, fim, 5, numObras),
     efetivo,
+    aprovadoresRanking: calcularAprovadoresRanking(rdos),
+    ultimosRdos: rdos
+      .slice()
+      .sort((a, b) => (dataRdo(b)?.getTime() || 0) - (dataRdo(a)?.getTime() || 0))
+      .slice(0, 10)
+      .map((r) => ({
+        id: r._id,
+        numero: r.numero,
+        data: r.data,
+        totalFotos: qtdFotos(r),
+        linkPdf: r.linkPdf || null,
+        obraNome: r.__obraNome || null,
+        statusAprovacao: aprovacoes(r).every(eAprovado)
+          ? 'aprovado'
+          : aprovacoes(r).some(eAprovado) ? 'parcial' : 'pendente',
+      })),
   };
+};
+
+const calcularAprovadoresRanking = (rdos) => {
+  const limites = [1, 2, 7];
+  const papeis  = ['Supervisor (D+1)', 'Gerente (D+2)', 'Cliente (D+7)'];
+  const map     = new Map();
+
+  for (const r of rdos) {
+    const aps = aprovacoes(r);
+    aps.forEach((ap, idx) => {
+      if (!eAprovado(ap)) return;
+      const nome = ap.usuarioNome;
+      if (!nome) return;
+      const inicioRdo = criadoEm(r);
+      const fimAp     = dataAp(ap);
+      if (!inicioRdo || !fimAp) return;
+      const tempo = diffDias(inicioRdo, fimAp);
+      const dentro = tempo <= (limites[idx] ?? 7);
+
+      const key  = `${nome}__${idx}`;
+      const prev = map.get(key) || {
+        nome,
+        cargo:  ap.usuarioCargo || '',
+        papel:  papeis[idx] || `Aprovador ${idx + 1}`,
+        total: 0,
+        somaTempo: 0,
+        dentroPrazo: 0,
+      };
+      prev.total       += 1;
+      prev.somaTempo   += tempo;
+      if (dentro) prev.dentroPrazo += 1;
+      map.set(key, prev);
+    });
+  }
+
+  return [...map.values()]
+    .map((u) => ({
+      ...u,
+      tempoMedio: +(u.somaTempo / u.total).toFixed(1),
+      taxaPrazo:  Math.round((u.dentroPrazo / u.total) * 100),
+    }))
+    .sort((a, b) => b.tempoMedio - a.tempoMedio);
 };
 
 const calcularEvolucaoSemanal = (rdos, fimStr, numSemanas = 5, numObras = 1) => {
