@@ -860,15 +860,53 @@ a { color: inherit; }
 
 /* ─── Treinamento — estilos avançados do conteúdo ──────────────── */
 
-.treinamento-wrap { max-width: 1280px; }
+.treinamento-wrap {
+  position: relative;
+  max-width: 1280px;
+  margin: 0 auto;
+}
 
 .manual-iframe {
   width: 100%;
-  height: calc(100vh - 180px);
-  min-height: 600px;
+  height: calc(100vh - 130px);
+  min-height: 480px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: #fff;
+  display: block;
+}
+
+.manual-open-tab {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--red);
+  color: #fff;
+  text-decoration: none;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  transition: background .15s, transform .12s;
+}
+.manual-open-tab:hover {
+  background: #a82220;
+  transform: translateY(-1px);
+}
+.manual-open-tab span[aria-hidden] { font-size: 15px; line-height: 1; }
+
+@media (max-width: 560px) {
+  .manual-iframe { height: calc(100vh - 100px); }
+  .manual-open-tab { padding: 7px 10px; font-size: 11px; }
+  .manual-open-tab-label { display: none; }
 }
 
 .manual-meta {
