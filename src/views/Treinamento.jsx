@@ -29,8 +29,11 @@ export default function Treinamento() {
       .then((html) => {
         if (cancelado) return;
         const doc = new DOMParser().parseFromString(html, 'text/html');
+        // ':root' nao casa nada dentro de shadow DOM. Trocamos por ':host'
+        // para que as custom properties (--red, --cover-bg, etc) sejam
+        // aplicadas ao shadow host e cascateiem pra todo o conteudo.
         const styles = Array.from(doc.querySelectorAll('style'))
-          .map((s) => s.textContent)
+          .map((s) => s.textContent.replace(/:root\b/g, ':host'))
           .join('\n');
         const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
           .map((l) => `<link rel="stylesheet" href="${l.getAttribute('href')}">`)
