@@ -3,6 +3,7 @@ import {
   getObras,
   getRelatoriosNaJanela,
   calcularKPIs,
+  calcularEfetivo,
   limparCache,
 } from '../services/api';
 
@@ -33,27 +34,46 @@ export function useDiarioKPIs(dias = 30) {
       const listaObras = await getObras();
       setObras(listaObras);
 
-      const inicio = diasAtras(dias);
-      const fim    = hoje();
+      const inicio    = diasAtras(dias);
+      const fim       = hoje();
+      const inicioAno = diasAtras(365);
 
       const pares = await Promise.all(
         listaObras.map(async (obra) => {
-          const id   = obra._id;
-          const rdos = await getRelatoriosNaJanela(id, inicio, fim);
-          return { id, obra, rdos };
+          const id = obra._id;
+          // Busca RDOs do periodo (para KPIs) e dos ultimos 12 meses
+          // (para o histograma) em paralelo. O cache compartilhado evita
+          // duplicar requests sobrepostos.
+          const [rdos, rdosAno] = await Promise.all([
+            getRelatoriosNaJanela(id, inicio, fim),
+            getRelatoriosNaJanela(id, inicioAno, fim),
+          ]);
+          return { id, obra, rdos, rdosAno };
         })
       );
 
       const kpisMap = {};
       const todosRdos = [];
-      for (const { id, obra, rdos } of pares) {
+      const todosRdosAno = [];
+      for (const { id, obra, rdos, rdosAno } of pares) {
         const rdosTagged = rdos.map((r) => ({
           ...r,
           __obraId: obra._id,
           __obraNome: obra.nome,
         }));
-        kpisMap[id] = { ...calcularKPIs(rdosTagged, inicio, fim), obra };
+        const historico = calcularEfetivo(rdosAno, {
+          preencherMeses: { inicio: inicioAno, fim },
+        });
+        kpisMap[id] = {
+          ...calcularKPIs(rdosTagged, inicio, fim),
+          obra,
+          historicoMensal: {
+            porMes: historico.porMes,
+            categoriaNomes: historico.categoriaNomes,
+          },
+        };
         for (const r of rdosTagged) todosRdos.push(r);
+        for (const r of rdosAno) todosRdosAno.push(r);
       }
 
       const consolidadoObra = {
@@ -62,9 +82,16 @@ export function useDiarioKPIs(dias = 30) {
         __consolidado: true,
         totalObras: listaObras.length,
       };
+      const histConsolidado = calcularEfetivo(todosRdosAno, {
+        preencherMeses: { inicio: inicioAno, fim },
+      });
       kpisMap[CONSOLIDADO_ID] = {
         ...calcularKPIs(todosRdos, inicio, fim, { numObras: listaObras.length }),
         obra: consolidadoObra,
+        historicoMensal: {
+          porMes: histConsolidado.porMes,
+          categoriaNomes: histConsolidado.categoriaNomes,
+        },
       };
 
       setObras([consolidadoObra, ...listaObras]);

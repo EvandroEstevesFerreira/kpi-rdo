@@ -22,7 +22,7 @@ export default function HistogramaPanel({ porMes, categoriaNomes }) {
       <div className="panel-head">
         <h2>Histograma de Mão de Obra</h2>
         <span className="panel-sub">
-          Média diária por mês, empilhada por categoria
+          Últimos 12 meses · média diária empilhada por categoria
         </span>
       </div>
 
