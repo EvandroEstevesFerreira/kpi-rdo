@@ -169,12 +169,16 @@ const maoDeObraDe = (r) => {
     .filter((m) => m && m.descricao && typeof m.quantidade === 'number');
 };
 
+const MESES_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
 // Calcula a media diaria de efetivo e o breakdown por funcao/categoria
 const calcularEfetivo = (rdos) => {
   // Mapa funcao -> { totalPessoasDias, diasComRegistro, categoria }
   const porFuncao = new Map();
   // Mapa categoria -> { totalPessoasDias, diasComRegistro }
   const porCategoria = new Map();
+  // Mapa 'yyyy-mm' -> { label, categorias: { cat -> { total, dias } } }
+  const porMesMap = new Map();
   // Soma diaria de pessoas em cada RDO (para a media geral)
   let somaTotalDiario = 0;
   let diasComEfetivo  = 0;
@@ -183,8 +187,17 @@ const calcularEfetivo = (rdos) => {
     const itens = maoDeObraDe(r);
     if (!itens.length) continue;
 
+    const dataR = parseDataBR(r.data);
+    const mesKey = dataR
+      ? `${dataR.getFullYear()}-${String(dataR.getMonth() + 1).padStart(2, '0')}`
+      : null;
+    const mesLabel = dataR ? MESES_PT[dataR.getMonth()] : '—';
+
     let totalNoDia = 0;
     diasComEfetivo++;
+
+    // Agrega por categoria neste RDO (uma soma por dia, nao por item)
+    const noDiaPorCategoria = {};
 
     for (const item of itens) {
       const funcao    = item.descricao;
@@ -192,6 +205,7 @@ const calcularEfetivo = (rdos) => {
       const categoria = item.categoria?.descricao || 'Sem categoria';
 
       totalNoDia += qtd;
+      noDiaPorCategoria[categoria] = (noDiaPorCategoria[categoria] || 0) + qtd;
 
       const prevF = porFuncao.get(funcao) || { total: 0, dias: 0, categoria };
       prevF.total += qtd;
@@ -203,6 +217,18 @@ const calcularEfetivo = (rdos) => {
       prevC.total += qtd;
       prevC.dias  += 1;
       porCategoria.set(categoria, prevC);
+    }
+
+    // Bucket mensal: soma diaria por categoria + contador de dias
+    if (mesKey) {
+      const mes = porMesMap.get(mesKey) || { label: mesLabel, categorias: {} };
+      for (const [cat, qtd] of Object.entries(noDiaPorCategoria)) {
+        const prev = mes.categorias[cat] || { total: 0, dias: 0 };
+        prev.total += qtd;
+        prev.dias  += 1;
+        mes.categorias[cat] = prev;
+      }
+      porMesMap.set(mesKey, mes);
     }
 
     somaTotalDiario += totalNoDia;
@@ -233,12 +259,29 @@ const calcularEfetivo = (rdos) => {
     }))
     .sort((a, b) => b.mediaPorDia - a.mediaPorDia);
 
+  // Lista ordenada de categorias (para series do grafico)
+  const categoriaNomes = categorias.map((c) => c.categoria);
+
+  // Bucket mensal -> media diaria por categoria
+  const porMes = [...porMesMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([mesKey, m]) => {
+      const row = { mes: m.label, mesKey };
+      for (const cat of categoriaNomes) {
+        const v = m.categorias[cat];
+        row[cat] = v ? Math.round(v.total / v.dias) : 0;
+      }
+      return row;
+    });
+
   return {
     mediaDiaria,
     diasComEfetivo,
     totalPessoasDias: somaTotalDiario,
     porFuncao: funcoes,
     porCategoria: categorias,
+    porMes,
+    categoriaNomes,
   };
 };
 

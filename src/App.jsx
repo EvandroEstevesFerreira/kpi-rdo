@@ -10,6 +10,7 @@ import AlertCard from './components/AlertCard';
 import Gauge from './components/Gauge';
 import InfoPopover from './components/InfoPopover';
 import EfetivoPanel from './components/EfetivoPanel';
+import HistogramaPanel from './components/HistogramaPanel';
 import AprovadoresPanel from './components/AprovadoresPanel';
 import UltimosRdosPanel from './components/UltimosRdosPanel';
 import Treinamento from './views/Treinamento';
@@ -75,6 +76,11 @@ function ObraDashboard({ kpi, dias }) {
           </ResponsiveContainer>
         </div>
       </div>
+
+      <HistogramaPanel
+        porMes={kpi.efetivo?.porMes}
+        categoriaNomes={kpi.efetivo?.categoriaNomes}
+      />
 
       <div className="dash-row dash-row-2col">
         <div className="panel">
@@ -236,16 +242,6 @@ export default function App() {
           >
             📘 Treinamento e Usabilidade
           </button>
-          <a
-            className="nav-item-flat nav-item-link"
-            href="https://web.diariodeobra.app/#/app/analise-de-dados/mao-de-obra/histograma"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Abre o histograma de mão de obra no diariodeobra.app"
-          >
-            📊 Histograma Mão de Obra
-            <span className="ext-arrow" aria-hidden="true">↗</span>
-          </a>
         </nav>
 
         <div className="sidebar-foot">
