@@ -285,6 +285,23 @@ a { color: inherit; }
 }
 .rdo-pdf:hover { text-decoration: underline; }
 
+.ultimo-rdo-row.is-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.ultimo-rdo-row.is-link:hover {
+  background: #fff;
+  border-color: var(--red);
+}
+.rdo-abrir {
+  color: var(--red);
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .topbar h1 {
   font-size: 28px;
   text-transform: uppercase;
