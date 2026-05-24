@@ -350,6 +350,9 @@ export const calcularKPIs = (rdos, inicio, fim, opts = {}) => {
         data: r.data,
         totalFotos: qtdFotos(r),
         linkPdf: r.linkPdf || null,
+        linkWeb: r.__obraId
+          ? `https://web.diariodeobra.app/#/app/obras/${r.__obraId}/relatorios/${r._id}`
+          : null,
         obraNome: r.__obraNome || null,
         statusAprovacao: aprovacoes(r).every(eAprovado)
           ? 'aprovado'
