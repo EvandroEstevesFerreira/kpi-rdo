@@ -148,6 +148,19 @@ a { color: inherit; }
 .obra-nome    { font-size: 13px; font-weight: 600; line-height: 1.3; }
 .obra-meta    { font-size: 11px; color: #b0b0b0; }
 
+.sidebar-nav button.obra-consolidado {
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  margin-bottom: 4px;
+  padding-bottom: 14px;
+}
+.sidebar-nav button.obra-consolidado .obra-nome {
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
 .sidebar-foot {
   padding: 14px 20px;
   font-size: 11px;

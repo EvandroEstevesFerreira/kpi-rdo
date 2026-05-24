@@ -3,7 +3,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, BarChart, Bar,
 } from 'recharts';
-import { useDiarioKPIs } from './hooks/useDiarioKPIs';
+import { useDiarioKPIs, CONSOLIDADO_ID } from './hooks/useDiarioKPIs';
 import Logo from './components/Logo';
 import KpiCard from './components/KpiCard';
 import AlertCard from './components/AlertCard';
@@ -198,13 +198,17 @@ export default function App() {
           {obras.map((o) => (
             <button
               key={o._id}
-              className={view === 'dashboard' && obraAtual === o._id ? 'active' : ''}
+              className={`${view === 'dashboard' && obraAtual === o._id ? 'active' : ''} ${o.__consolidado ? 'obra-consolidado' : ''}`}
               onClick={() => selecionarObra(o._id)}
             >
-              <span className="obra-nome">{o.nome}</span>
+              <span className="obra-nome">
+                {o.__consolidado ? `📊 ${o.nome}` : o.nome}
+              </span>
               <span className="obra-meta">
                 {kpis[o._id]
-                  ? `Conformidade ${kpis[o._id].conformidade}%`
+                  ? (o.__consolidado
+                      ? `${o.totalObras} obras · Conformidade ${kpis[o._id].conformidade}%`
+                      : `Conformidade ${kpis[o._id].conformidade}%`)
                   : 'Carregando…'}
               </span>
             </button>

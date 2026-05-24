@@ -10,6 +10,8 @@ const hoje      = () => new Date().toISOString().slice(0, 10);
 const diasAtras = (n) =>
   new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
 
+export const CONSOLIDADO_ID = '__consolidado__';
+
 /**
  * Hook principal — busca obras e calcula KPIs de todas em paralelo.
  * Cada obra dispara N chamadas ao endpoint de detalhe (uma por RDO
@@ -38,11 +40,30 @@ export function useDiarioKPIs(dias = 30) {
         listaObras.map(async (obra) => {
           const id   = obra._id;
           const rdos = await getRelatoriosNaJanela(id, inicio, fim);
-          return [id, { ...calcularKPIs(rdos, inicio, fim), obra }];
+          return { id, obra, rdos };
         })
       );
 
-      setKpis(Object.fromEntries(pares));
+      const kpisMap = {};
+      const todosRdos = [];
+      for (const { id, obra, rdos } of pares) {
+        kpisMap[id] = { ...calcularKPIs(rdos, inicio, fim), obra };
+        todosRdos.push(...rdos);
+      }
+
+      const consolidadoObra = {
+        _id: CONSOLIDADO_ID,
+        nome: 'Consolidado — Todas as obras',
+        __consolidado: true,
+        totalObras: listaObras.length,
+      };
+      kpisMap[CONSOLIDADO_ID] = {
+        ...calcularKPIs(todosRdos, inicio, fim, { numObras: listaObras.length }),
+        obra: consolidadoObra,
+      };
+
+      setObras([consolidadoObra, ...listaObras]);
+      setKpis(kpisMap);
       setLastSync(new Date());
     } catch (err) {
       console.error('[useDiarioKPIs]', err);
