@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis,
-  CartesianGrid, Tooltip, BarChart, Bar,
+  CartesianGrid, Tooltip, Legend, BarChart, Bar,
 } from 'recharts';
 import { useDiarioKPIs, CONSOLIDADO_ID } from './hooks/useDiarioKPIs';
 import Logo from './components/Logo';
@@ -64,12 +64,13 @@ function ObraDashboard({ kpi, dias }) {
 
         <div className="panel">
           <h2>Evolução Semanal</h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={kpi.evolucaoSemanal || []}>
+          <ResponsiveContainer width="100%" height={240}>
+            <LineChart data={kpi.evolucaoSemanal || []} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="sem" />
               <YAxis />
               <Tooltip />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
               <Line type="monotone" dataKey="taxa"  stroke="#cf2927" strokeWidth={2} name="Taxa emissão %" />
               <Line type="monotone" dataKey="fotos" stroke="#3a3a3a" strokeWidth={2} name="Fotos médias" />
             </LineChart>
