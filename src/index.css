@@ -426,7 +426,11 @@ a { color: inherit; }
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 20px;
+  margin-bottom: 24px;
 }
+/* Paineis dentro de .dash-row sao posicionados via grid (gap),
+   nao precisam de margin-bottom individual. */
+.dash-row .panel { margin-bottom: 0; }
 
 .panel h2 {
   font-size: 14px;
