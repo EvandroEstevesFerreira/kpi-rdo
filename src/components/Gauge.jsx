@@ -11,7 +11,9 @@ export default function Gauge({ valor = 0, label = 'Conformidade' }) {
   const angle = Math.PI * (1 - v / 100); // 180° -> 0°
   const x2 = CX + R * Math.cos(angle);
   const y2 = CY - R * Math.sin(angle);
-  const largeArc = v > 50 ? 1 : 0;
+  // Um semicirculo nunca passa de 180°, entao large-arc-flag e sempre 0.
+  // (Setar 1 acima de 50% fazia o arco percorrer o caminho LONGO de ~309°,
+  // que era exatamente o bug visto na tela.)
 
   return (
     <div className="gauge">
@@ -25,7 +27,7 @@ export default function Gauge({ valor = 0, label = 'Conformidade' }) {
         />
         {v > 0 && (
           <path
-            d={`M ${CX - R} ${CY} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2}`}
+            d={`M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${x2} ${y2}`}
             fill="none"
             stroke={cor}
             strokeWidth="16"
