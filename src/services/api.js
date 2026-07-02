@@ -422,9 +422,14 @@ export const calcularKPIs = (rdos, inicio, fim, opts = {}) => {
 };
 
 const calcularAprovadoresRanking = (rdos) => {
-  const limites = [1, 2, 7];
-  const papeis  = ['Supervisor (D+1)', 'Gerente (D+2)', 'Cliente (D+7)'];
-  const map     = new Map();
+  const limites   = [1, 2, 7];
+  const papeis    = ['Supervisor (D+1)', 'Gerente (D+2)', 'Cliente (D+7)'];
+  const map       = new Map();
+  // Base do "No prazo": TOTAL de RDOs do período — a mesma usada por
+  // prazoOk() nos KPI cards e no gauge de conformidade. Assim os dois
+  // lugares mostram o mesmo número e as aprovações faltantes (RDOs que
+  // o aprovador ainda não assinou) contam contra, como manda o compliance.
+  const totalRdos = rdos.length;
 
   for (const r of rdos) {
     const aps = aprovacoes(r);
@@ -457,8 +462,10 @@ const calcularAprovadoresRanking = (rdos) => {
   return [...map.values()]
     .map((u) => ({
       ...u,
+      // tempoMédio = média das aprovações que ESTE aprovador fez (÷ u.total).
       tempoMedio: +(u.somaTempo / u.total).toFixed(1),
-      taxaPrazo:  Math.round((u.dentroPrazo / u.total) * 100),
+      // No prazo = % de TODOS os RDOs (÷ totalRdos), igual aos KPI cards.
+      taxaPrazo:  totalRdos ? Math.round((u.dentroPrazo / totalRdos) * 100) : 0,
     }))
     .sort((a, b) => b.tempoMedio - a.tempoMedio);
 };
