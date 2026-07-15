@@ -23,11 +23,13 @@ export const KPI_INFO = {
   },
 
   aprovador1: {
-    titulo: 'Aprovação Supervisor (D+1)',
+    titulo: 'Aprovação Supervisor',
     descricao:
-      '% de RDOs aprovados pelo supervisor da obra dentro de 1 dia útil ' +
-      'após a criação. Primeiro aprovador no fluxo.',
-    formula: 'RDOs aprovados em D+1 ÷ total RDOs × 100',
+      '% de RDOs aprovados pelo supervisor da obra (número grande = total, ' +
+      'independente do prazo). O subtítulo mostra o % aprovado dentro do ' +
+      'prazo de D+1, que é o número que conta para o compliance/conformidade.',
+    formula: 'RDOs aprovados ÷ total RDOs × 100 (aprovado total). ' +
+             'Meta refere-se ao "no prazo" (D+1).',
     meta: 95,
     unidade: '%',
     invertido: false,
@@ -42,11 +44,13 @@ export const KPI_INFO = {
   },
 
   aprovador2: {
-    titulo: 'Aprovação Gerente (D+2)',
+    titulo: 'Aprovação Gerente',
     descricao:
-      '% de RDOs aprovados pelo gerente do contrato dentro de 2 dias úteis ' +
-      'após criação. Segundo aprovador.',
-    formula: 'RDOs aprovados em D+2 ÷ total RDOs × 100',
+      '% de RDOs aprovados pelo gerente do contrato (total). O subtítulo ' +
+      'mostra o % aprovado dentro do prazo D+2, que é o número que conta ' +
+      'para o compliance/conformidade.',
+    formula: 'RDOs aprovados ÷ total RDOs × 100 (total). ' +
+             'Meta refere-se ao "no prazo" (D+2).',
     meta: 90,
     unidade: '%',
     invertido: false,
@@ -61,11 +65,13 @@ export const KPI_INFO = {
   },
 
   aprovador3: {
-    titulo: 'Aprovação Cliente (D+7)',
+    titulo: 'Aprovação Cliente',
     descricao:
-      '% de RDOs aprovados pelo cliente/fiscalização dentro de 7 dias após ' +
-      'criação. Terceiro e último aprovador.',
-    formula: 'RDOs aprovados em D+7 ÷ total RDOs × 100',
+      '% de RDOs aprovados pelo cliente/fiscalização (total). O subtítulo ' +
+      'mostra o % aprovado dentro do prazo D+7, que é o número que conta ' +
+      'para o compliance/conformidade.',
+    formula: 'RDOs aprovados ÷ total RDOs × 100 (total). ' +
+             'Meta refere-se ao "no prazo" (D+7).',
     meta: 80,
     unidade: '%',
     invertido: false,
@@ -80,11 +86,12 @@ export const KPI_INFO = {
   },
 
   pendentes: {
-    titulo: 'RDOs Pendentes',
+    titulo: 'Pendentes Internos',
     descricao:
-      'Quantidade absoluta de RDOs do período que ainda têm pelo menos ' +
-      'uma assinatura/aprovação faltando.',
-    formula: 'Contagem de RDOs com aprovado=false em qualquer aprovador',
+      'RDOs do período aguardando aprovação interna (supervisor ou gerente). ' +
+      'Aprovações do cliente são contadas separadamente pois têm dinâmica ' +
+      'de tempo diferente e menos controlável pela Sistenge.',
+    formula: 'Contagem de RDOs com supervisor OU gerente ainda não aprovado',
     meta: 3,
     unidade: '',
     invertido: true,

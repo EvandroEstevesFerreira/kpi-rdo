@@ -336,6 +336,18 @@ export const calcularKPIs = (rdos, inicio, fim, opts = {}) => {
   const aprovador2 = prazoOk(1, 2);
   const aprovador3 = prazoOk(2, 7);
 
+  // % RDOs aprovados pelo aprovador `idx` (independente do prazo).
+  // Diferente de prazoOk: conta aprovacoes atrasadas tambem.
+  const aprovadoTotal = (idx) => {
+    if (!total) return 0;
+    const ok = rdos.filter((r) => eAprovado(aprovacoes(r)[idx])).length;
+    return Math.round((ok / total) * 100);
+  };
+
+  const aprovador1Total = aprovadoTotal(0);
+  const aprovador2Total = aprovadoTotal(1);
+  const aprovador3Total = aprovadoTotal(2);
+
   const tempoMedio = (idx) => {
     const tempos = rdos
       .map((r) => {
@@ -351,10 +363,22 @@ export const calcularKPIs = (rdos, inicio, fim, opts = {}) => {
     return +(tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(1);
   };
 
-  // RDO com pelo menos 1 aprovação ainda não aprovada
+  // RDO com pelo menos 1 aprovação ainda não aprovada (compat backwards)
   const pendentes = rdos.filter((r) =>
     aprovacoes(r).some((ap) => !eAprovado(ap))
   ).length;
+
+  // Separacao por severidade:
+  // - criticos = falta supervisor OU gerente (dependem so da Sistenge)
+  // - aguardandoCliente = internos aprovaram, so falta o cliente
+  const pendentesCriticos = rdos.filter((r) => {
+    const aps = aprovacoes(r);
+    return !eAprovado(aps[0]) || !eAprovado(aps[1]);
+  }).length;
+  const pendentesAguardandoCliente = rdos.filter((r) => {
+    const aps = aprovacoes(r);
+    return eAprovado(aps[0]) && eAprovado(aps[1]) && !eAprovado(aps[2]);
+  }).length;
 
   const mediaFotos = total
     ? Math.round(rdos.reduce((s, r) => s + qtdFotos(r), 0) / total)
@@ -386,7 +410,12 @@ export const calcularKPIs = (rdos, inicio, fim, opts = {}) => {
     aprovador1,
     aprovador2,
     aprovador3,
+    aprovador1Total,
+    aprovador2Total,
+    aprovador3Total,
     pendentes,
+    pendentesCriticos,
+    pendentesAguardandoCliente,
     mediaFotos,
     ocorrencias,
     conformidade,

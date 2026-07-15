@@ -24,8 +24,10 @@ const gerarAlertas = (k) => {
     out.push({ tipo: 'danger', msg: `Conformidade geral em ${k.conformidade}% — abaixo do limite aceitável (70%)` });
   if (k.taxaEmissao < 85)
     out.push({ tipo: 'danger', msg: `Taxa de emissão em ${k.taxaEmissao}% — meta 95%` });
-  if (k.pendentes > 3)
-    out.push({ tipo: 'danger', msg: `${k.pendentes} RDOs com aprovação pendente — risco de glose de medição` });
+  if (k.pendentesCriticos > 3)
+    out.push({ tipo: 'danger', msg: `${k.pendentesCriticos} RDOs aguardando aprovação interna (supervisor/gerente) — risco de glose` });
+  if (k.pendentesAguardandoCliente > 10)
+    out.push({ tipo: 'warn', msg: `${k.pendentesAguardandoCliente} RDOs aguardando aprovação do cliente` });
   if (k.aprovador3 < 80 && k.totalRdos > 0)
     out.push({ tipo: 'warn', msg: `Aprovação do cliente em ${k.aprovador3}% — meta 80%` });
   if (k.aprovador2 < 90 && k.totalRdos > 0)
@@ -44,10 +46,16 @@ function ObraDashboard({ kpi, dias }) {
     <>
       <div className="kpi-grid">
         <KpiCard label="Taxa de Emissão"  valor={kpi.taxaEmissao} info={KPI_INFO.taxaEmissao} />
-        <KpiCard label="Aprov. Supervisor" valor={kpi.aprovador1}  info={KPI_INFO.aprovador1} />
-        <KpiCard label="Aprov. Gerente"    valor={kpi.aprovador2}  info={KPI_INFO.aprovador2} />
-        <KpiCard label="Aprov. Cliente"    valor={kpi.aprovador3}  info={KPI_INFO.aprovador3} />
-        <KpiCard label="RDOs Pendentes"    valor={kpi.pendentes}   info={KPI_INFO.pendentes} />
+        <KpiCard label="Aprov. Supervisor" valor={kpi.aprovador1Total} info={KPI_INFO.aprovador1}
+                 subtitle={`${kpi.aprovador1}% no prazo (D+1)`} />
+        <KpiCard label="Aprov. Gerente"    valor={kpi.aprovador2Total} info={KPI_INFO.aprovador2}
+                 subtitle={`${kpi.aprovador2}% no prazo (D+2)`} />
+        <KpiCard label="Aprov. Cliente"    valor={kpi.aprovador3Total} info={KPI_INFO.aprovador3}
+                 subtitle={`${kpi.aprovador3}% no prazo (D+7)`} />
+        <KpiCard label="Pendentes Internos" valor={kpi.pendentesCriticos} info={KPI_INFO.pendentes}
+                 subtitle={kpi.pendentesAguardandoCliente
+                   ? `+ ${kpi.pendentesAguardandoCliente} aguardando cliente`
+                   : null} />
         <KpiCard label="Média de Fotos"    valor={kpi.mediaFotos}  info={KPI_INFO.mediaFotos} />
         <KpiCard label="RDOs Emitidos"     valor={kpi.totalRdos}   info={KPI_INFO.totalRdos}
                  metaLabel={`de ${kpi.esperados} dias úteis`} />
