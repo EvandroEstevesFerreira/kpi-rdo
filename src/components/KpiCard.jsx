@@ -13,7 +13,7 @@ const classificar = (valor, info) => {
   return 'crit';
 };
 
-export default function KpiCard({ label, valor, unidade, info, metaLabel }) {
+export default function KpiCard({ label, valor, unidade, info, metaLabel, subtitle }) {
   const status = info ? classificar(valor, info) : null;
   const dotClass =
     status === 'ok' ? 'dot-ok' :
@@ -37,6 +37,8 @@ export default function KpiCard({ label, valor, unidade, info, metaLabel }) {
           <span style={{ fontSize: 18, color: '#6b6b6b', marginLeft: 2 }}>{un}</span>
         )}
       </span>
+
+      {subtitle && <span className="kpi-subtitle">{subtitle}</span>}
 
       {info?.meta != null && (
         <span className="meta">

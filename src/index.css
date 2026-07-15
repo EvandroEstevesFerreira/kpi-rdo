@@ -398,6 +398,12 @@ a { color: inherit; }
   font-size: 11px;
   color: var(--muted);
 }
+.kpi-card .kpi-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-weight: 600;
+}
 .kpi-card .status-dot {
   position: absolute;
   top: 16px; right: 16px;
