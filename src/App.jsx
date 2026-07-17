@@ -59,6 +59,8 @@ function ObraDashboard({ kpi, dias }) {
         <KpiCard label="Média de Fotos"    valor={kpi.mediaFotos}  info={KPI_INFO.mediaFotos} />
         <KpiCard label="RDOs Emitidos"     valor={kpi.totalRdos}   info={KPI_INFO.totalRdos}
                  metaLabel={`de ${kpi.esperados} dias úteis`} />
+        <KpiCard label="RDOs no Contrato"  valor={kpi.totalContrato} info={KPI_INFO.totalContrato}
+                 subtitle="desde o início do contrato" />
       </div>
 
       <div className="dash-row">

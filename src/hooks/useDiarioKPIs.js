@@ -67,6 +67,9 @@ export function useDiarioKPIs(dias = 30) {
         kpisMap[id] = {
           ...calcularKPIs(rdosTagged, inicio, fim),
           obra,
+          // Total de RDOs desde o inicio do contrato (vem do envelope
+          // /obras, nao depende da janela do periodo selecionado).
+          totalContrato: obra.totalRelatorios ?? null,
           historicoMensal: {
             porMes: historico.porMes,
             categoriaNomes: historico.categoriaNomes,
@@ -76,6 +79,10 @@ export function useDiarioKPIs(dias = 30) {
         for (const r of rdosAno) todosRdosAno.push(r);
       }
 
+      const totalContratoConsolidado = listaObras.reduce(
+        (soma, o) => soma + (o.totalRelatorios ?? 0),
+        0,
+      );
       const consolidadoObra = {
         _id: CONSOLIDADO_ID,
         nome: 'Consolidado — Todas as obras',
@@ -88,6 +95,7 @@ export function useDiarioKPIs(dias = 30) {
       kpisMap[CONSOLIDADO_ID] = {
         ...calcularKPIs(todosRdos, inicio, fim, { numObras: listaObras.length }),
         obra: consolidadoObra,
+        totalContrato: totalContratoConsolidado || null,
         historicoMensal: {
           porMes: histConsolidado.porMes,
           categoriaNomes: histConsolidado.categoriaNomes,

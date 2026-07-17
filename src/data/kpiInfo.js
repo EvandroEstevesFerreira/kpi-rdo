@@ -138,6 +138,21 @@ export const KPI_INFO = {
       'estão sem registro — peça de evidência primária do KPI Taxa de Emissão.',
   },
 
+  totalContrato: {
+    titulo: 'RDOs no Contrato',
+    descricao:
+      'Total de RDOs emitidos desde o início do contrato até hoje, ' +
+      'independente do período de análise selecionado. No consolidado, ' +
+      'soma o total de todas as obras.',
+    formula: 'obra.totalRelatorios (envelope do endpoint /obras)',
+    meta: null,
+    unidade: '',
+    invertido: false,
+    impacto:
+      'Volume histórico total do contrato. Útil para dimensionar o esforço ' +
+      'de registro acumulado e como referência de longevidade da obra.',
+  },
+
   conformidade: {
     titulo: 'Conformidade Geral',
     descricao:
