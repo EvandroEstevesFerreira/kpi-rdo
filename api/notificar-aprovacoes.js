@@ -53,7 +53,12 @@ export default async function handler(req, res) {
     return;
   }
 
-  const kvOk       = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  // Aceita tanto os nomes do Vercel KV (KV_REST_API_*) quanto os do
+  // Upstash direto (UPSTASH_REDIS_REST_*), pois o Vercel migrou o KV
+  // para o marketplace do Upstash e o prefixo injetado varia.
+  const kvUrl   = process.env.KV_REST_API_URL   || process.env.UPSTASH_REDIS_REST_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  const kvOk    = !!(kvUrl && kvToken);
   const sendReal   = process.env.NOTIFY_ENABLED === 'true' && kvOk
                      && !!process.env.RESEND_API_KEY;
   const dryRun     = !sendReal;
@@ -100,7 +105,7 @@ export default async function handler(req, res) {
         const dedupKey = `notif:${rdo._id}:${idxProximo}`;
 
         // Já notificado?
-        if (kvOk && (await kvGet(dedupKey))) {
+        if (kvOk && (await kvGet(kvUrl, kvToken, dedupKey))) {
           resultado.jaNotificados++;
           continue;
         }
@@ -123,7 +128,7 @@ export default async function handler(req, res) {
 
         try {
           await enviarResend(email, payload);
-          if (kvOk) await kvSet(dedupKey, '1');
+          if (kvOk) await kvSet(kvUrl, kvToken, dedupKey, '1');
           resultado.enviados++;
           resultado.notificacoes.push({ ...registro, acao: 'enviado' });
         } catch (err) {
@@ -215,22 +220,18 @@ async function enviarResend(to, { subject, html, text }) {
 }
 
 // ── Vercel KV (REST / Upstash) ──────────────────────────────────────
-async function kvGet(key) {
-  const url = `${process.env.KV_REST_API_URL}/get/${encodeURIComponent(key)}`;
-  const r = await fetch(url, {
-    headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}` },
-  });
+async function kvGet(baseUrl, token, key) {
+  const url = `${baseUrl}/get/${encodeURIComponent(key)}`;
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!r.ok) return null;
   const data = await r.json();
   return data?.result ?? null;
 }
 
-async function kvSet(key, value) {
+async function kvSet(baseUrl, token, key, value) {
   // TTL de 180 dias — evita crescer o store indefinidamente.
-  const url = `${process.env.KV_REST_API_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}?EX=15552000`;
-  await fetch(url, {
-    headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}` },
-  });
+  const url = `${baseUrl}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}?EX=15552000`;
+  await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
 }
 
 // ── Chamada à API do diariodeobra (server-side, mesmo padrão do proxy) ──
