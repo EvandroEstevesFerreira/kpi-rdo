@@ -4,9 +4,12 @@
 
 export const config = {
   matcher: [
-    // Exclui: /login (pagina e endpoint), assets de logo/favicon e
-    // arquivos do Vite (/assets/*, /favicon, etc.)
-    '/((?!login\\.html|api/login|sistenge-logo|favicon|assets/).*)',
+    // Exclui: /login (pagina e endpoint), o endpoint do cron de
+    // notificacao (tem sua propria auth via CRON_SECRET — o Vercel Cron
+    // nao envia cookie de sessao, entao sem esta excecao a varredura
+    // seria redirecionada pro login e nunca rodaria), assets de
+    // logo/favicon e arquivos do Vite (/assets/*, /favicon, etc.)
+    '/((?!login\\.html|api/login|api/notificar-aprovacoes|sistenge-logo|favicon|assets/).*)',
   ],
 };
 
