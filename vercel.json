@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/notificar-aprovacoes",
+      "schedule": "0 9-18 * * 1-5"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/diario/:path*",
