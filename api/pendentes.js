@@ -23,20 +23,8 @@ export default async function handler(req, res) {
   if (secret) {
     const auth = req.headers.authorization || '';
     const qsSecret = ((req.query && req.query.secret) || '').toString();
-    const matchDireto = auth === `Bearer ${secret}` || qsSecret === secret;
-    const matchTrim   = qsSecret.trim() === secret.trim();
-    if (!matchDireto && !matchTrim) {
-      // Diagnóstico NÃO-sensível: só tamanhos, nunca os valores.
-      res.status(401).json({
-        error: 'Não autorizado',
-        debug: {
-          tamanhoEsperado: secret.length,
-          tamanhoRecebido: qsSecret.length,
-          iguaisAposTrim: matchTrim,
-          primeiros4Esperado: secret.slice(0, 4),
-          primeiros4Recebido: qsSecret.slice(0, 4),
-        },
-      });
+    if (auth !== `Bearer ${secret}` && qsSecret.trim() !== secret.trim()) {
+      res.status(401).json({ error: 'Não autorizado' });
       return;
     }
   }
@@ -90,38 +78,62 @@ export default async function handler(req, res) {
       for (const rdo of detalhes) {
         if (!rdo) continue;
         const aps = rdo.assinaturasEletronicaUrl || [];
-        const supOk = aps[0]?.aprovado === true;
-        const gerOk = aps[1]?.aprovado === true;
-        // Pendência interna: supervisor OU gerente ainda não assinaram.
-        if (supOk && gerOk) continue;
 
-        // Quem está devendo agora = primeiro interno não aprovado.
-        const idxPendente = !supOk ? 0 : 1;
-        const pendente = aps[idxPendente] || {};
-        const nomePend = pendente.usuarioNome || '';
-        const emailPend = pendente.usuarioEmail || '';
+        // Dias parado: desde a criação do RDO.
+        const criado = parseDataBR(rdo.log?.criadoPor?.dataHora) || parseDataBR(rdo.data);
+        const diasParado = criado
+          ? Math.floor((Date.now() - criado.getTime()) / 86_400_000)
+          : null;
 
-        if (filtroAprovador &&
-            !(`${nomePend} ${emailPend}`.toLowerCase().includes(filtroAprovador))) {
+        if (filtroAprovador) {
+          // Modo "por aprovador": inclui o RDO se a assinatura DESTA
+          // pessoa ainda nao foi dada (independente de ser a vez dela).
+          const idx = aps.findIndex((a) =>
+            `${a?.usuarioNome || ''} ${a?.usuarioEmail || ''}`.toLowerCase().includes(filtroAprovador));
+          if (idx < 0) continue;               // essa pessoa nao assina esse RDO
+          if (aps[idx]?.aprovado === true) continue; // ja assinou
+
+          // "Vez dele" se todos os anteriores ja assinaram; senao esta
+          // represado atras (informa quem esta segurando).
+          const anterioresOk = aps.slice(0, idx).every((a) => a?.aprovado === true);
+          const bloqueador = anterioresOk
+            ? null
+            : (aps.slice(0, idx).find((a) => a?.aprovado !== true) || {});
+
+          linhas.push({
+            obra: obra.nome,
+            rdoId: rdo._id,
+            numero: rdo.numero ?? null,
+            data: rdo.data || null,
+            aprovadorPendente: aps[idx]?.usuarioNome || '',
+            emailPendente: aps[idx]?.usuarioEmail || '',
+            papel: aps[idx]?.usuarioCargo || PAPEIS[idx] || `Aprovador ${idx + 1}`,
+            situacao: anterioresOk ? 'vez dele' : 'aguardando etapa anterior',
+            bloqueadoPor: bloqueador ? (bloqueador.usuarioNome || '') : null,
+            diasParado,
+            link: `${WEB_BASE}/obras/${obra._id}/relatorios/${rdo._id}`,
+          });
           continue;
         }
 
-        // Dias parado: desde a aprovação anterior (se houver) ou a criação.
-        const marco = idxPendente > 0 && aps[idxPendente - 1]?.dataHora
-          ? parseDataBR(aps[idxPendente - 1].dataHora)
-          : (parseDataBR(rdo.log?.criadoPor?.dataHora) || parseDataBR(rdo.data));
-        const diasParado = marco
-          ? Math.floor((Date.now() - marco.getTime()) / 86_400_000)
-          : null;
+        // Modo geral (sem filtro): pendencia INTERNA — supervisor OU
+        // gerente ainda nao assinaram. Atribui ao primeiro da fila.
+        const supOk = aps[0]?.aprovado === true;
+        const gerOk = aps[1]?.aprovado === true;
+        if (supOk && gerOk) continue;
+        const idxPendente = !supOk ? 0 : 1;
+        const pendente = aps[idxPendente] || {};
 
         linhas.push({
           obra: obra.nome,
           rdoId: rdo._id,
           numero: rdo.numero ?? null,
           data: rdo.data || null,
-          aprovadorPendente: nomePend,
-          emailPendente: emailPend,
-          papel: PAPEIS[idxPendente] || `Aprovador ${idxPendente + 1}`,
+          aprovadorPendente: pendente.usuarioNome || '',
+          emailPendente: pendente.usuarioEmail || '',
+          papel: pendente.usuarioCargo || PAPEIS[idxPendente] || `Aprovador ${idxPendente + 1}`,
+          situacao: 'vez dele',
+          bloqueadoPor: null,
           diasParado,
           link: `${WEB_BASE}/obras/${obra._id}/relatorios/${rdo._id}`,
         });
@@ -154,6 +166,8 @@ function paraCsv(linhas) {
     ['aprovadorPendente', 'Aprovador pendente'],
     ['emailPendente', 'E-mail'],
     ['papel', 'Papel'],
+    ['situacao', 'Situação'],
+    ['bloqueadoPor', 'Bloqueado por'],
     ['diasParado', 'Dias parado'],
     ['link', 'Link'],
   ];
