@@ -15,7 +15,7 @@
 
 const DEFAULT_BASE = 'https://api.diariodeobra.app/v2';
 const WEB_BASE     = 'https://web.diariodeobra.app/#/app';
-const FETCH_CONCURRENCY = 3;
+const FETCH_CONCURRENCY = 2;
 const PAPEIS = ['Supervisor da Obra', 'Gerente do Contrato', 'Cliente / Fiscalização'];
 
 // Varredura historica pode demorar (muitos RDOs); pede tempo maximo ao
@@ -248,8 +248,9 @@ async function diarioGet(base, empresaId, apiKey, path, params = {}) {
   ).toString();
   const target = `${base}/empresas/${empresaId}${path}${qs ? '?' + qs : ''}`;
 
-  // Retry com backoff em caso de 429 (limite por minuto da API).
-  const esperas = [2000, 5000, 10000];
+  // Retry com backoff longo em 429 — o limite e POR MINUTO, entao as
+  // esperas precisam atravessar a virada do minuto.
+  const esperas = [5000, 15000, 30000, 60000];
   for (let tentativa = 0; ; tentativa++) {
     const r = await fetch(target, {
       headers: { 'Token': apiKey, 'App-Iss': 'app-web', 'Accept': 'application/json' },
