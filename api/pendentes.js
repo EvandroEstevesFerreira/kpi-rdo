@@ -18,6 +18,10 @@ const WEB_BASE     = 'https://web.diariodeobra.app/#/app';
 const FETCH_CONCURRENCY = 3;
 const PAPEIS = ['Supervisor da Obra', 'Gerente do Contrato', 'Cliente / Fiscalização'];
 
+// Varredura historica pode demorar (muitos RDOs); pede tempo maximo ao
+// runtime do Vercel (Pro permite ate 300s).
+export const maxDuration = 300;
+
 export default async function handler(req, res) {
   const secret = process.env.CRON_SECRET;
   if (secret) {
@@ -43,6 +47,16 @@ export default async function handler(req, res) {
   const filtroAprovador = (req.query?.aprovador || '').toString().toLowerCase();
   const formato         = (req.query?.formato || 'json').toString().toLowerCase();
 
+  // Janela de datas (opcional). Aceita YYYY-MM-DD ou DD/MM/YYYY.
+  // Se `inicio` for informado, ativa a VARREDURA HISTORICA: em vez de
+  // usar so o endpoint de aguardando-aprovacao (que mostra apenas o
+  // pendente do momento), percorre TODA a listagem da obra no periodo.
+  const inicioParam = (req.query?.inicio || '').toString();
+  const fimParam    = (req.query?.fim || '').toString();
+  const historico   = !!inicioParam;
+  const inicioD = parseDataFlex(inicioParam);
+  const fimD    = parseDataFlex(fimParam) || new Date();
+
   try {
     const obrasData = await api('/obras', { grupoObra: true });
     let obras = (obrasData.obras || []).filter((o) => o?.status?.id === 3);
@@ -51,22 +65,34 @@ export default async function handler(req, res) {
     const linhas = [];
 
     for (const obra of obras) {
-      // Usa o endpoint que ja devolve SO os RDOs aguardando aprovacao —
-      // conjunto muito menor que varrer todos os relatorios, evitando
-      // estourar o rate limit da API do diariodeobra.
       let ids = [];
-      try {
-        const aguardando = await api(`/obras/${obra._id}/relatorios-aguardando-aprovacao`);
-        const lista = Array.isArray(aguardando)
-          ? aguardando
-          : (aguardando.relatorios || aguardando.data || aguardando.aguardando || []);
-        ids = lista.map((r) => r._id || r.id).filter(Boolean);
-      } catch {
-        // Fallback: se o endpoint nao existir/responder, cai para a
-        // listagem geral (limitada) — mas so os 60 mais recentes.
-        const listagem = await api(`/obras/${obra._id}/relatorios`, { limite: 60, ordem: 'desc' });
+      if (historico) {
+        // Varredura completa: pega toda a listagem da obra e filtra pela
+        // janela de datas. Necessario para alcancar o historico (o
+        // endpoint de aguardando-aprovacao so mostra o pendente atual).
+        const listagem = await api(`/obras/${obra._id}/relatorios`, { limite: 1000, ordem: 'desc' });
         const rdos = Array.isArray(listagem) ? listagem : (listagem.relatorios || listagem.data || []);
-        ids = rdos.map((r) => r._id).filter(Boolean);
+        ids = rdos
+          .filter((r) => {
+            const d = parseDataBR(r.data);
+            return d && d >= inicioD && d <= fimD;
+          })
+          .map((r) => r._id)
+          .filter(Boolean);
+      } else {
+        // Modo padrao: so os RDOs aguardando aprovacao (conjunto menor,
+        // evita estourar o rate limit da API).
+        try {
+          const aguardando = await api(`/obras/${obra._id}/relatorios-aguardando-aprovacao`);
+          const lista = Array.isArray(aguardando)
+            ? aguardando
+            : (aguardando.relatorios || aguardando.data || aguardando.aguardando || []);
+          ids = lista.map((r) => r._id || r.id).filter(Boolean);
+        } catch {
+          const listagem = await api(`/obras/${obra._id}/relatorios`, { limite: 60, ordem: 'desc' });
+          const rdos = Array.isArray(listagem) ? listagem : (listagem.relatorios || listagem.data || []);
+          ids = rdos.map((r) => r._id).filter(Boolean);
+        }
       }
 
       const detalhes = await pMap(
@@ -100,16 +126,26 @@ export default async function handler(req, res) {
             ? null
             : (aps.slice(0, idx).find((a) => a?.aprovado !== true) || {});
 
+          const statusEtapa = (i) => {
+            const a = aps[i];
+            if (!a) return '—';
+            return a.aprovado === true ? `assinado ${a.dataHora || ''}`.trim() : 'pendente';
+          };
+
           linhas.push({
             obra: obra.nome,
             rdoId: rdo._id,
             numero: rdo.numero ?? null,
             data: rdo.data || null,
+            dataCriacao: rdo.log?.criadoPor?.dataHora || null,
             aprovadorPendente: aps[idx]?.usuarioNome || '',
             emailPendente: aps[idx]?.usuarioEmail || '',
             papel: aps[idx]?.usuarioCargo || PAPEIS[idx] || `Aprovador ${idx + 1}`,
             situacao: anterioresOk ? 'vez dele' : 'aguardando etapa anterior',
             bloqueadoPor: bloqueador ? (bloqueador.usuarioNome || '') : null,
+            etapa1Supervisor: statusEtapa(0),
+            etapa2Gerente: statusEtapa(1),
+            etapa3Cliente: statusEtapa(2),
             diasParado,
             link: `${WEB_BASE}/obras/${obra._id}/relatorios/${rdo._id}`,
           });
@@ -163,11 +199,15 @@ function paraCsv(linhas) {
     ['obra', 'Obra'],
     ['numero', 'RDO'],
     ['data', 'Data'],
+    ['dataCriacao', 'Criado em'],
     ['aprovadorPendente', 'Aprovador pendente'],
     ['emailPendente', 'E-mail'],
     ['papel', 'Papel'],
     ['situacao', 'Situação'],
     ['bloqueadoPor', 'Bloqueado por'],
+    ['etapa1Supervisor', '1ª aprovação (Supervisor)'],
+    ['etapa2Gerente', '2ª aprovação (Gerente)'],
+    ['etapa3Cliente', '3ª aprovação (Cliente)'],
     ['diasParado', 'Dias parado'],
     ['link', 'Link'],
   ];
@@ -187,6 +227,17 @@ function parseDataBR(s) {
   if (!dia || !mes || !ano) return null;
   const [hh = 0, mm = 0] = (horaParte || '').split(':').map(Number);
   return new Date(ano, mes - 1, dia, hh, mm);
+}
+
+// Aceita "YYYY-MM-DD" (ISO) ou "DD/MM/YYYY".
+function parseDataFlex(s) {
+  if (!s) return null;
+  const t = s.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(t)) {
+    const [ano, mes, dia] = t.slice(0, 10).split('-').map(Number);
+    return new Date(ano, mes - 1, dia);
+  }
+  return parseDataBR(t);
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
