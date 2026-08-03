@@ -22,9 +22,21 @@ export default async function handler(req, res) {
   const secret = process.env.CRON_SECRET;
   if (secret) {
     const auth = req.headers.authorization || '';
-    const qsSecret = (req.query && req.query.secret) || '';
-    if (auth !== `Bearer ${secret}` && qsSecret !== secret) {
-      res.status(401).json({ error: 'Não autorizado' });
+    const qsSecret = ((req.query && req.query.secret) || '').toString();
+    const matchDireto = auth === `Bearer ${secret}` || qsSecret === secret;
+    const matchTrim   = qsSecret.trim() === secret.trim();
+    if (!matchDireto && !matchTrim) {
+      // Diagnóstico NÃO-sensível: só tamanhos, nunca os valores.
+      res.status(401).json({
+        error: 'Não autorizado',
+        debug: {
+          tamanhoEsperado: secret.length,
+          tamanhoRecebido: qsSecret.length,
+          iguaisAposTrim: matchTrim,
+          primeiros4Esperado: secret.slice(0, 4),
+          primeiros4Recebido: qsSecret.slice(0, 4),
+        },
+      });
       return;
     }
   }
