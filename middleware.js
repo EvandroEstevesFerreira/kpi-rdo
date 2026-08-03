@@ -9,7 +9,7 @@ export const config = {
     // nao envia cookie de sessao, entao sem esta excecao a varredura
     // seria redirecionada pro login e nunca rodaria), assets de
     // logo/favicon e arquivos do Vite (/assets/*, /favicon, etc.)
-    '/((?!login\\.html|api/login|api/notificar-aprovacoes|sistenge-logo|favicon|assets/).*)',
+    '/((?!login\\.html|api/login|api/notificar-aprovacoes|api/pendentes|sistenge-logo|favicon|assets/).*)',
   ],
 };
 
