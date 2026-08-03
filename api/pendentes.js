@@ -15,7 +15,7 @@
 
 const DEFAULT_BASE = 'https://api.diariodeobra.app/v2';
 const WEB_BASE     = 'https://web.diariodeobra.app/#/app';
-const FETCH_CONCURRENCY = 6;
+const FETCH_CONCURRENCY = 3;
 const PAPEIS = ['Supervisor da Obra', 'Gerente do Contrato', 'Cliente / Fiscalização'];
 
 export default async function handler(req, res) {
@@ -63,11 +63,26 @@ export default async function handler(req, res) {
     const linhas = [];
 
     for (const obra of obras) {
-      const listagem = await api(`/obras/${obra._id}/relatorios`, { limite: 200, ordem: 'desc' });
-      const rdos = Array.isArray(listagem) ? listagem : (listagem.relatorios || listagem.data || []);
+      // Usa o endpoint que ja devolve SO os RDOs aguardando aprovacao —
+      // conjunto muito menor que varrer todos os relatorios, evitando
+      // estourar o rate limit da API do diariodeobra.
+      let ids = [];
+      try {
+        const aguardando = await api(`/obras/${obra._id}/relatorios-aguardando-aprovacao`);
+        const lista = Array.isArray(aguardando)
+          ? aguardando
+          : (aguardando.relatorios || aguardando.data || aguardando.aguardando || []);
+        ids = lista.map((r) => r._id || r.id).filter(Boolean);
+      } catch {
+        // Fallback: se o endpoint nao existir/responder, cai para a
+        // listagem geral (limitada) — mas so os 60 mais recentes.
+        const listagem = await api(`/obras/${obra._id}/relatorios`, { limite: 60, ordem: 'desc' });
+        const rdos = Array.isArray(listagem) ? listagem : (listagem.relatorios || listagem.data || []);
+        ids = rdos.map((r) => r._id).filter(Boolean);
+      }
 
       const detalhes = await pMap(
-        rdos.map((r) => r._id),
+        ids,
         (id) => api(`/obras/${obra._id}/relatorios/${id}`).catch(() => null),
         FETCH_CONCURRENCY,
       );
@@ -160,19 +175,28 @@ function parseDataBR(s) {
   return new Date(ano, mes - 1, dia, hh, mm);
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function diarioGet(base, empresaId, apiKey, path, params = {}) {
   const qs = new URLSearchParams(
     Object.fromEntries(Object.entries(params).filter(([, v]) => v != null)),
   ).toString();
   const target = `${base}/empresas/${empresaId}${path}${qs ? '?' + qs : ''}`;
-  const r = await fetch(target, {
-    headers: { 'Token': apiKey, 'App-Iss': 'app-web', 'Accept': 'application/json' },
-  });
-  if (!r.ok) {
+
+  // Retry com backoff em caso de 429 (limite por minuto da API).
+  const esperas = [2000, 5000, 10000];
+  for (let tentativa = 0; ; tentativa++) {
+    const r = await fetch(target, {
+      headers: { 'Token': apiKey, 'App-Iss': 'app-web', 'Accept': 'application/json' },
+    });
+    if (r.ok) return r.json();
+    if (r.status === 429 && tentativa < esperas.length) {
+      await sleep(esperas[tentativa]);
+      continue;
+    }
     const body = await r.text().catch(() => '');
     throw new Error(`API ${r.status} em ${path}: ${body}`);
   }
-  return r.json();
 }
 
 async function pMap(items, fn, concurrency = 6) {
